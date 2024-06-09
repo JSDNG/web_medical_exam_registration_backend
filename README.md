@@ -14,6 +14,10 @@
 
 ### `Application self-manages the queue` (assigning consultation numbers for patients with or without prior appointments).
 
+# ERD
+
+[Click](https://app.diagrams.net/#G1Ymq2OvWu_JAy33iFWQxt4zhIhqphcLDX#%7B%22pageId%22%3A%22C5RBs43oDa-KdzZeNtuy%22%7D)
+
 # Getting Started with Create BackEnd App
 
 This project was expressJS with [Create BackEnd](https://github.com/expressjs/express?tab=readme-ov-file#Installation).

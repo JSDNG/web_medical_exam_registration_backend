@@ -6,7 +6,7 @@ const configViewEngine = require("./config/viewEngine");
 const cookieParser = require("cookie-parser");
 const initWebRoutes = require("./routes/web");
 const initAPIRoutes = require("./routes/api");
-
+const connection = require("./config/connectDB");
 const app = express(); // app express
 const port = process.env.PORT;
 const hostname = process.env.HOST_NAME;
@@ -18,6 +18,7 @@ app.use(express.urlencoded({ extended: true })); //Parse URL-encoded bodies
 // config template engine
 configViewEngine(app);
 
+connection();
 // config cors
 //configCors(app);
 
