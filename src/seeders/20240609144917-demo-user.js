@@ -20,6 +20,11 @@ module.exports = {
                     lastName: " Doe",
                     email: "email@gmail.com",
                 },
+                {
+                    firstName: "duc",
+                    lastName: " quynh",
+                    email: "admin@gmail.com",
+                },
             ],
             {}
         );
