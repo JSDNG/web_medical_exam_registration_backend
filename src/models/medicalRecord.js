@@ -9,20 +9,27 @@ module.exports = (sequelize, DataTypes) => {
          */
         static associate(models) {
             // define association here
-            MedicalRecord.belongsTo(models.Doctor, { foreignKey: "doctorId" });
+            MedicalRecord.belongsTo(models.MedicalStaff, { foreignKey: "doctorId" });
             MedicalRecord.belongsTo(models.Patient, { foreignKey: "patientId" });
             MedicalRecord.hasMany(models.Prescription, { foreignKey: "recordId" });
+            MedicalRecord.hasMany(models.Invoice, { foreignKey: "recordId" });
+            MedicalRecord.belongsTo(models.Appointment, { foreignKey: "appointmentId" });
+            MedicalRecord.belongsTo(models.AllStatus, { foreignKey: "statusId" });
+            MedicalRecord.belongsTo(models.Specialty, { foreignKey: "specialtyId" });
         }
     }
     MedicalRecord.init(
         {
             medicalHistory: DataTypes.STRING,
-            reasonForExamination: DataTypes.STRING,
+            reason: DataTypes.STRING,
             diagnosis: DataTypes.STRING,
             treatmentPlan: DataTypes.STRING,
             dateCreated: DataTypes.DATE,
             patientId: DataTypes.INTEGER,
             doctorId: DataTypes.INTEGER,
+            statusId: DataTypes.INTEGER,
+            appointmentId: DataTypes.INTEGER,
+            specialtyId: DataTypes.INTEGER,
         },
         {
             sequelize,

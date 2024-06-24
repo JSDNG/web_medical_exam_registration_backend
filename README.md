@@ -1,18 +1,18 @@
 #Node.js v19.6.1
 
-# Title of the project: Developing a web application to assist with registering for medical examinations at private clinics.
+# - Tên đề tài: Xây dựng ứng dụng Web trợ giúp đăng ký khám bệnh tại phòng khám tư.
 
-## Theoretical Content: Understanding the technical aspects and technologies supporting application development:
+## Nội dung Lý thuyết:
 
-### OAuth2.0 and JWT (for login authentication), ReactJS (for FrontEnd development), and NodeJS and MySQL (for BackEnd development).
+### Tìm hiểu kỹ thuật, công nghệ hỗ trợ xây dựng ứng dụng: OAuth2.0 và JWT (hỗ trợ đăng nhập), ReactJS (xây dựng FrontEnd) và NodeJS và MySQL (xây dựng BackEnd).
 
-## Practical Content: Analysis, design, and development of an application with the following functions:
+## Nội dung Thực hành: Phân tích, thiết kế và xây dựng ứng dụng có các chức năng:
 
-### `Patient:` Create medical records, register for consultation, schedule appointments.
+### + Bệnh nhân: lập sổ bệnh án, đăng ký khám, đăng ký lịch khám.
 
-### `Doctor:` View medical records, diagnose and prescribe treatment plans (prescriptions), schedule follow-up appointments, and generate invoices.
+### Bác sỹ: xem bệnh án, định bệnh và phác đồ điều trị (toa thuốc), hẹn lịch tái khám và lập hóa đơn.
 
-### `Application self-manages the queue` (assigning consultation numbers for patients with or without prior appointments).
+### Ứng dụng tự quản lý hàng đợi (cấp số thứ tự khám cho bệnh nhân có /không có lịch hẹn trước).
 
 # ERD
 

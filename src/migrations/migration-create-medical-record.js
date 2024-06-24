@@ -17,7 +17,7 @@ module.exports = {
                 medicalHistory: {
                     type: Sequelize.STRING,
                 },
-                reasonForExamination: {
+                reason: {
                     type: Sequelize.STRING,
                 },
                 diagnosis: {
@@ -33,6 +33,15 @@ module.exports = {
                     type: Sequelize.INTEGER,
                 },
                 doctorId: {
+                    type: Sequelize.INTEGER,
+                },
+                statusId: {
+                    type: Sequelize.INTEGER,
+                },
+                appointmentId: {
+                    type: Sequelize.INTEGER,
+                },
+                specialtyId: {
                     type: Sequelize.INTEGER,
                 },
                 createdAt: {

@@ -14,16 +14,28 @@ module.exports = {
                     primaryKey: true,
                     type: Sequelize.INTEGER,
                 },
-                appointmentDateTime: {
+                queueNumber: {
+                    type: Sequelize.INTEGER,
+                },
+                appointmentDate: {
+                    type: Sequelize.DATE,
+                },
+                price: {
                     type: Sequelize.STRING,
                 },
-                status: {
-                    type: Sequelize.STRING,
+                timeId: {
+                    type: Sequelize.INTEGER,
+                },
+                statusId: {
+                    type: Sequelize.INTEGER,
+                },
+                doctorId: {
+                    type: Sequelize.INTEGER,
                 },
                 patientId: {
                     type: Sequelize.INTEGER,
                 },
-                doctorId: {
+                staffId: {
                     type: Sequelize.INTEGER,
                 },
                 createdAt: {

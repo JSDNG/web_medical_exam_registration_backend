@@ -5,21 +5,15 @@ const { toDefaultValue } = require("sequelize/lib/utils");
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
     async up(queryInterface, Sequelize) {
-        await queryInterface.createTable("Account", {
+        await queryInterface.createTable("PeriodOfTime", {
             id: {
                 allowNull: false,
                 autoIncrement: true,
                 primaryKey: true,
                 type: Sequelize.INTEGER,
             },
-            email: {
+            time: {
                 type: Sequelize.STRING,
-            },
-            password: {
-                type: Sequelize.STRING,
-            },
-            roleId: {
-                type: Sequelize.INTEGER,
             },
             createdAt: {
                 allowNull: false,
@@ -35,6 +29,6 @@ module.exports = {
         });
     },
     async down(queryInterface, Sequelize) {
-        await queryInterface.dropTable("Account");
+        await queryInterface.dropTable("PeriodOfTime");
     },
 };

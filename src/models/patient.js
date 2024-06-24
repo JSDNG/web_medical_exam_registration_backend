@@ -12,21 +12,17 @@ module.exports = (sequelize, DataTypes) => {
             Patient.belongsTo(models.Account, { foreignKey: "accountId" });
             Patient.hasMany(models.Appointment, { foreignKey: "patientId" });
             Patient.hasMany(models.MedicalRecord, { foreignKey: "patientId" });
-            Patient.hasMany(models.Invoice, { foreignKey: "patientId" });
-            Patient.hasMany(models.QueueNumber, { foreignKey: "patientId" });
         }
     }
     Patient.init(
         {
-            firstName: DataTypes.STRING,
-            lastName: DataTypes.STRING,
+            fullName: DataTypes.STRING,
             image: DataTypes.STRING,
             dateOfBirth: DataTypes.DATE,
             gender: DataTypes.STRING,
             phone: DataTypes.STRING,
             address: DataTypes.STRING,
             dateCreated: DataTypes.DATE,
-            groupName: DataTypes.STRING,
             accountId: DataTypes.INTEGER,
         },
         {

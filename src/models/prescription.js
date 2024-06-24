@@ -9,17 +9,13 @@ module.exports = (sequelize, DataTypes) => {
          */
         static associate(models) {
             // define association here
-            Prescription.belongsTo(models.Doctor, { foreignKey: "doctorId" });
+            Prescription.belongsTo(models.MedicalStaff, { foreignKey: "doctorId" });
             Prescription.belongsTo(models.MedicalRecord, { foreignKey: "recordId" });
-            Prescription.hasOne(models.Invoice, { foreignKey: "prescriptionId" });
+            Prescription.hasMany(models.Medicine, { foreignKey: "prescriptionId" });
         }
     }
     Prescription.init(
         {
-            medicationName: DataTypes.STRING,
-            dosage: DataTypes.STRING,
-            price: DataTypes.STRING,
-            instruction: DataTypes.STRING,
             dateCreated: DataTypes.DATE,
             doctorId: DataTypes.INTEGER,
             recordId: DataTypes.INTEGER,

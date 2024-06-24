@@ -20,16 +20,10 @@ module.exports = {
                 dateCreated: {
                     type: Sequelize.DATE,
                 },
-                status: {
-                    type: Sequelize.STRING,
-                },
                 doctorId: {
                     type: Sequelize.INTEGER,
                 },
-                prescriptionId: {
-                    type: Sequelize.INTEGER,
-                },
-                patientId: {
+                recordId: {
                     type: Sequelize.INTEGER,
                 },
                 createdAt: {
