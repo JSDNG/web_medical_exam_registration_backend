@@ -1,7 +1,7 @@
 require("dotenv").config();
 const express = require("express"); //commonjs
 const configViewEngine = require("./config/viewEngine");
-//const configCors = require("./config/cors");
+const configCors = require("./config/cors");
 //const db = require("./models");
 const cookieParser = require("cookie-parser");
 const initWebRoutes = require("./routes/web");
@@ -20,7 +20,7 @@ configViewEngine(app);
 
 connection();
 // config cors
-//configCors(app);
+configCors(app);
 
 // config cookie-parser
 app.use(cookieParser());

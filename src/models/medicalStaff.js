@@ -11,8 +11,8 @@ module.exports = (sequelize, DataTypes) => {
             // define association here
             MedicalStaff.belongsTo(models.Account, { foreignKey: "accountId" });
             MedicalStaff.belongsTo(models.Position, { foreignKey: "positionId" });
-            MedicalStaff.hasMany(models.Appointment, { foreignKey: "doctorId", as: "doctorData" });
-            MedicalStaff.hasMany(models.Appointment, { foreignKey: "staffId", as: "staffData" });
+            MedicalStaff.hasMany(models.Schedule, { foreignKey: "doctorId" });
+            MedicalStaff.hasMany(models.Appointment, { foreignKey: "staffId" });
             MedicalStaff.hasMany(models.MedicalRecord, { foreignKey: "doctorId" });
             MedicalStaff.hasMany(models.Invoice, { foreignKey: "doctorId" });
             MedicalStaff.belongsToMany(models.Specialty, {
