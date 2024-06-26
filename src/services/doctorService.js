@@ -1,4 +1,6 @@
 const db = require("../models");
+const _ = require("lodash");
+const { Op } = require("sequelize");
 // const checkUserId = async (id) => {
 //     let userId = await db.User.findOne({
 //         where: { id: id },
@@ -21,34 +23,58 @@ const db = require("../models");
 // };
 const createSchedule = async (rawData) => {
     try {
-        let data = await db.Schedule.bulkCreate(rawData);
-        // let data = await db.PeriodOfTime.findAll({
-        //     // where: { id: 1 },
-        //     // attributes: ["id", "email", "password"],
-        //     // include: [{ model: db.Role, attributes: ["roleName"] }],
-        // });
+        // Lấy thông tin lịch hiện tại từ cơ sở dữ liệu
+        let dataOld = await db.Schedule.findAll({
+            where: { doctorId: rawData[0].doctorId, date: rawData[0].date },
+            attributes: ["price", "date", "doctorId", "timeId"],
+            raw: true,
+        });
+
+        // Chuyển đổi date của các lịch hiện tại sang timestamp
+        const convertDateToTimestamp = (item) => {
+            item.date = new Date(item.date).getTime();
+            return item;
+        };
+
+        if (dataOld && dataOld.length > 0) {
+            dataOld = dataOld.map(convertDateToTimestamp);
+        }
+
+        // So sánh và tạo danh sách các lịch cần tạo mới
+        const toCreate = _.differenceWith(rawData, dataOld, (a, b) => {
+            return a.timeId === b.timeId && new Date(a.date).getTime() === b.date;
+        });
+
+        // Tạo mới các lịch cần tạo
+        if (toCreate.length > 0) {
+            await db.Schedule.bulkCreate(toCreate);
+        }
         return {
-            EC: 200,
+            EC: 0,
             EM: "Schedule created successfully",
-            DT: data,
+            DT: "",
         };
     } catch (err) {
+        console.error(err);
         return {
             EC: -1,
-            EM: "Something wrongs in service... ",
+            EM: "Something wrongs in service...",
             DT: "",
         };
     }
 };
 const getAllSchedule = async () => {
     try {
-        let data = await db.Schedule.findAll();
+        let results = await db.Schedule.findAll({ attributes: ["price", "date", "doctorId", "timeId"] });
+        let data = results && results.length > 0 ? results.map((result) => result.get({ plain: true })) : [];
+        console.log(data);
         return {
-            EC: 200,
+            EC: 0,
             EM: "Get the schedule list",
             DT: data,
         };
     } catch (err) {
+        console.log(err);
         return {
             EC: -1,
             EM: "Something wrongs in service... ",
@@ -56,18 +82,22 @@ const getAllSchedule = async () => {
         };
     }
 };
-const deleteSchedule = async (id) => {
+const deleteSchedule = async (rawData) => {
     try {
-        await db.Schedule.destroy({
-            where: {
-                id: id,
-            },
-        });
-        return {
-            EC: 201,
-            EM: "Deleted",
-            DT: "",
-        };
+        if (rawData) {
+            await db.Schedule.destroy({
+                where: {
+                    id: {
+                        [Op.in]: rawData,
+                    },
+                },
+            });
+            return {
+                EC: 0,
+                EM: "Deleted",
+                DT: "",
+            };
+        }
     } catch (err) {
         console.log(err);
         return {
