@@ -1,5 +1,6 @@
 const db = require("../models");
 const _ = require("lodash");
+const { reduce } = require("lodash");
 const { Op } = require("sequelize");
 // const checkUserId = async (id) => {
 //     let userId = await db.User.findOne({
@@ -63,42 +64,65 @@ const createSchedule = async (rawData) => {
         };
     }
 };
+
 const getAllSchedule = async (id) => {
     try {
+        // Lấy dữ liệu từ cơ sở dữ liệu
         let data = await db.Schedule.findAll({
             where: { doctorId: id },
             attributes: ["id", "price", "date", "doctorId", "timeId"],
+            raw: true,
+            nest: true,
+            order: [["date", "ASC"]],
         });
-        if (!data.length > 0) {
+        // Kiểm tra nếu data không có giá trị thì trả về mảng rỗng
+        if (!data || data.length === 0) {
             return {
                 EC: 0,
-                EM: "Get All Study Sets",
-                DT: "",
+                EM: "No schedules found",
+                DT: [],
             };
         }
+
         for (let j = 0; j < data.length; j++) {
             const result = data[j];
             let time = await db.PeriodOfTime.findByPk(result.timeId, { attributes: ["time"] });
             result.timeId = time.get({ plain: true });
         }
-        //console.log(data);
+        // Nhóm các đối tượng theo ngày sử dụng reduce
+        const groupedData = data.reduce((acc, schedule) => {
+            const date = schedule.date.toISOString().split("T")[0]; // Lấy ngày (không lấy giờ)
+            if (!acc[date]) {
+                acc[date] = [];
+            }
+            acc[date].push(schedule);
+            return acc;
+        }, {});
+
+        // Chuyển đổi định dạng để trả về
+        const result = Object.keys(groupedData).map((date) => ({
+            date,
+            schedules: groupedData[date],
+        }));
+
         return {
             EC: 0,
             EM: "Get the schedule list",
-            DT: data,
+            DT: result,
         };
     } catch (err) {
         console.log(err);
         return {
             EC: -1,
-            EM: "Something wrongs in service... ",
+            EM: "Something went wrong in service...",
             DT: "",
         };
     }
 };
+
 const deleteSchedule = async (rawData) => {
     try {
-        if (rawData) {
+        if (rawData && rawData.length > 0) {
             await db.Schedule.destroy({
                 where: {
                     id: {
@@ -125,7 +149,6 @@ const getAllTime = async () => {
     try {
         let results = await db.PeriodOfTime.findAll({ attributes: ["id", "time"] });
         let data = results && results.length > 0 ? results.map((result) => result.get({ plain: true })) : [];
-        console.log(data);
         return {
             EC: 0,
             EM: "Get the time list",

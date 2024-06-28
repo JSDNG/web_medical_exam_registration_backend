@@ -117,38 +117,48 @@ module.exports = {
         //         statusName: "Tái khám",
         //     },
         // ]);
-        await queryInterface.bulkInsert("Account", [
-            {
-                email: "doctor3@gmail.com",
-                password: "$2a$10$FwzpIIPd8qykQkXD3R4nn.d2s6BEQaPFR6GOf3ZoaVIRWw3vRCU/O",
-                accountType: "MedicalStaff",
-                roleId: 2,
-            },
-        ]);
-        await queryInterface.bulkInsert("MedicalStaff", [
-            {
-                fullName: "Doctor3",
-                image: "DataTypes.STRING",
-                dateOfBirth: new Date("2002-01-17"),
-                gender: "Nam",
-                phone: "123456789",
-                description: "DataTypes.STRING",
-                address: "DataTypes.STRING",
-                dateCreated: new Date(),
-                accountId: 4,
-                positionId: 4,
-            },
-        ]);
-        await queryInterface.bulkInsert("DoctorSpecialty", [
-            {
-                doctorId: 4,
-                specialtyId: 1,
-            },
-            {
-                doctorId: 4,
-                specialtyId: 2,
-            },
-        ]);
+        // await queryInterface.bulkInsert("Account", [
+        //     {
+        //         email: "doctor3@gmail.com",
+        //         password: "$2a$10$FwzpIIPd8qykQkXD3R4nn.d2s6BEQaPFR6GOf3ZoaVIRWw3vRCU/O",
+        //         accountType: "MedicalStaff",
+        //         roleId: 2,
+        //     },
+        // ]);
+        // await queryInterface.bulkInsert("MedicalStaff", [
+        //     {
+        //         fullName: "Doctor3",
+        //         image: "DataTypes.STRING",
+        //         dateOfBirth: new Date("2002-01-17"),
+        //         gender: "Nam",
+        //         phone: "123456789",
+        //         description: "DataTypes.STRING",
+        //         address: "DataTypes.STRING",
+        //         dateCreated: new Date(),
+        //         accountId: 4,
+        //         positionId: 4,
+        //     },
+        // ]);
+        // await queryInterface.bulkInsert("DoctorSpecialty", [
+        //     {
+        //         doctorId: 4,
+        //         specialtyId: 1,
+        //     },
+        //     {
+        //         doctorId: 4,
+        //         specialtyId: 2,
+        //     },
+        // ]);
+        // await queryInterface.bulkInsert("DoctorSpecialty", [
+        //     {
+        //         doctorId: 4,
+        //         specialtyId: 1,
+        //     },
+        //     {
+        //         doctorId: 4,
+        //         specialtyId: 2,
+        //     },
+        // ]);
     },
 
     async down(queryInterface, Sequelize) {

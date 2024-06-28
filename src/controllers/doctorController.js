@@ -2,15 +2,20 @@ const { getAllSchedule, createSchedule, deleteSchedule, getAllTime } = require("
 
 const postSchedule = async (req, res) => {
     try {
-        if (!req.body.create) {
+        if (!req.body.create && !req.body.delete) {
             return res.status(200).json({
                 EC: 1,
                 EM: "Missing required parameters",
                 DT: "",
             });
         }
-        let data1 = await deleteSchedule(req.body.delete);
-        let data = await createSchedule(req.body.create);
+        let data;
+        if(req.body.create && req.body.create.length > 0){
+            data = await createSchedule(req.body.create);
+        }
+        if(req.body.delete && req.body.delete.length > 0){
+            data = await deleteSchedule(req.body.delete);
+        }
         return res.status(200).json({
             EC: data.EC,
             EM: data.EM,

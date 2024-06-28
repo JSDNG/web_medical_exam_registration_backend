@@ -11,6 +11,7 @@ const initAPIRoutes = (app) => {
     router.post("/logout", logout);
     // Admin
     router.get("/admin/doctor/all", getAllDoctor)
+    
     // Doctor
     router.get("/doctor/:id/schedule/all", getSchedule);
     router.post("/doctor/schedule", postSchedule);
