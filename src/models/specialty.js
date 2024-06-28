@@ -20,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
         {
             specialtyName: DataTypes.STRING,
             description: DataTypes.STRING,
-            image: DataTypes.STRING,
+            image: DataTypes.BLOB,
         },
         {
             sequelize,

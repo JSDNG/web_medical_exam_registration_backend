@@ -1,4 +1,4 @@
-const { getAllSchedule, createSchedule, deleteSchedule } = require("../services/doctorService");
+const { getAllSchedule, createSchedule, deleteSchedule, getAllTime } = require("../services/doctorService");
 
 const postSchedule = async (req, res) => {
     try {
@@ -27,7 +27,24 @@ const postSchedule = async (req, res) => {
 };
 const getSchedule = async (req, res) => {
     try {
-        let data = await getAllSchedule();
+
+        let data = await getAllSchedule(req.params.id);
+        return res.status(200).json({
+            EC: data.EC,
+            EM: data.EM,
+            DT: data.DT,
+        });
+    } catch (err) {
+        res.status(500).json({
+            EC: -1,
+            EM: "error from server",
+            DT: "",
+        });
+    }
+};
+const getTime = async (req, res) => {
+    try {
+        let data = await getAllTime();
         return res.status(200).json({
             EC: data.EC,
             EM: data.EM,
@@ -44,4 +61,5 @@ const getSchedule = async (req, res) => {
 module.exports = {
     postSchedule,
     getSchedule,
+    getTime,
 };

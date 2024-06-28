@@ -63,11 +63,25 @@ const createSchedule = async (rawData) => {
         };
     }
 };
-const getAllSchedule = async () => {
+const getAllSchedule = async (id) => {
     try {
-        let results = await db.Schedule.findAll({ attributes: ["price", "date", "doctorId", "timeId"] });
-        let data = results && results.length > 0 ? results.map((result) => result.get({ plain: true })) : [];
-        console.log(data);
+        let data = await db.Schedule.findAll({
+            where: { doctorId: id },
+            attributes: ["id", "price", "date", "doctorId", "timeId"],
+        });
+        if (!data.length > 0) {
+            return {
+                EC: 0,
+                EM: "Get All Study Sets",
+                DT: "",
+            };
+        }
+        for (let j = 0; j < data.length; j++) {
+            const result = data[j];
+            let time = await db.PeriodOfTime.findByPk(result.timeId, { attributes: ["time"] });
+            result.timeId = time.get({ plain: true });
+        }
+        //console.log(data);
         return {
             EC: 0,
             EM: "Get the schedule list",
@@ -107,8 +121,28 @@ const deleteSchedule = async (rawData) => {
         };
     }
 };
+const getAllTime = async () => {
+    try {
+        let results = await db.PeriodOfTime.findAll({ attributes: ["id", "time"] });
+        let data = results && results.length > 0 ? results.map((result) => result.get({ plain: true })) : [];
+        console.log(data);
+        return {
+            EC: 0,
+            EM: "Get the time list",
+            DT: data,
+        };
+    } catch (err) {
+        console.log(err);
+        return {
+            EC: -1,
+            EM: "Something wrongs in service... ",
+            DT: "",
+        };
+    }
+};
 module.exports = {
     createSchedule,
     getAllSchedule,
     deleteSchedule,
+    getAllTime,
 };

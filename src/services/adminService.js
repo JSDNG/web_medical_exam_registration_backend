@@ -34,6 +34,7 @@ const registerAccount = async (rawData) => {
         }
         let data = await db.Account.create({
             email: rawData.email,
+            accountType: rawData.accountType,
             password: hashpass,
             roleId: rawData.roleId,
         });
@@ -54,54 +55,85 @@ const registerAccount = async (rawData) => {
 const loginAccount = async (rawData) => {
     try {
         let account = await db.Account.findOne({
-            // where: {
-            //     [Op.or]:[
-            //         {email: rawData.emailorphone},
-            //         {phone: rawData.emailorphone}
-            //     ]
-            // }
-            where: {
-                email: rawData.email,
-            },
+            where: { email: rawData?.email },
         });
-        if (account) {
-            let isPassword = checkPassword(rawData.password, account.password);
-            // let user = await db.Role.findOne({
-            //     where: { id: account.roleId },
-            // });
-            let role = await db.Role.findOne({
-                where: { id: account.roleId },
-            });
-            let payload = {
-                email: account.email,
-                role: role.roleName,
+
+        if (!account || !checkPassword(rawData?.password, account?.password)) {
+            return {
+                EC: 1,
+                EM: "Email or password is incorrect",
+                DT: "",
             };
-            let token = createJWT(payload);
-            // const imageBuffer = user.image; // Giả sử hình ảnh được lưu trong trường "image" của bản ghi
-            // const base64Image = Buffer.from(imageBuffer, "binary").toString("base64");
-            // user.image = base64Image;
-            if (isPassword === true) {
-                return {
-                    EC: 0,
-                    EM: "Login succeed",
-                    DT: {
-                        access_token: token,
-                        refresh_token: "refresh_token",
-                        email: account.email,
-                        //username: user.username,
-                        //userId: user.id,
-                        image: "",
-                        role: role.roleName,
-                    },
-                };
-            }
         }
+
+        const rolePromise = db.Role.findOne({ where: { id: account.roleId } });
+
+        let userPromise;
+        if (account.accountType === "MedicalStaff") {
+            userPromise = db.MedicalStaff.findOne({
+                where: { accountId: account.id },
+                attributes: [
+                    "id",
+                    "fullName",
+                    "image",
+                    "dateOfBirth",
+                    "gender",
+                    "phone",
+                    "description",
+                    "address",
+                    "dateCreated",
+                ],
+                include: [
+                    {
+                        model: db.Specialty,
+                        attributes: ["id", "specialtyName", "description", "image"],
+                        through: { attributes: [] }, // Chỉ cần nếu có bảng trung gian
+                    },
+                    {
+                        model: db.Position,
+                        attributes: ["id", "positionName"],
+                    },
+                ],
+            });
+        } else if (account.accountType === "Patient") {
+            userPromise = db.Patient.findOne({
+                where: { accountId: account.id },
+                attributes: ["id", "fullName", "image", "dateOfBirth", "gender", "phone", "address", "dateCreated"],
+            });
+        }
+
+        const [role, user] = await Promise.all([rolePromise, userPromise]);
+
+        let payload = {
+            email: account.email,
+            role: role.roleName,
+        };
+        let token = createJWT(payload);
+        if (user.image) {
+            user.image = Buffer.from(user.image, "binary").toString("base64");
+        }
+
+        if (user.Specialties && user.Specialties.length > 0) {
+            user.Specialties.forEach((item) => {
+                if (item.image) {
+                    item.image = Buffer.from(item.image, "binary").toString("base64");
+                }
+            });
+        }
+
         return {
-            EC: 1,
-            EM: "Email or password is incorrect",
-            DT: "",
+            EC: 0,
+            EM: "Login succeed",
+            DT: {
+                access_token: token,
+                refresh_token: "refresh_token",
+                email: account.email,
+                user: user,
+                role: role.roleName,
+            },
         };
     } catch (err) {
+        console.log(err);
         return {
             EC: -1,
             EM: "Something wrongs in service... ",
@@ -109,13 +141,22 @@ const loginAccount = async (rawData) => {
         };
     }
 };
-const createNewMedicalStaff = async (fullName, accountId) => {
+const createNewUser = async (fullName, accountId, accountType) => {
     try {
-        await db.MedicalStaff.create({
+        const userCreationData = {
             fullName: fullName,
             dateCreated: Date.now(),
             accountId: accountId,
-        });
+        };
+
+        if (accountType === "MedicalStaff") {
+            await db.MedicalStaff.create(userCreationData);
+        } else if (accountType === "Patient") {
+            await db.Patient.create(userCreationData);
+        } else {
+            throw new Error("Invalid account type");
+        }
+
         return {
             EC: 0,
             EM: "User created successfully",
@@ -133,5 +174,5 @@ const createNewMedicalStaff = async (fullName, accountId) => {
 module.exports = {
     registerAccount,
     loginAccount,
-    createNewMedicalStaff,
+    createNewUser,
 };

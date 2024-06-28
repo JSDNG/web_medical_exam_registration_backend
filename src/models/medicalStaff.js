@@ -25,7 +25,7 @@ module.exports = (sequelize, DataTypes) => {
     MedicalStaff.init(
         {
             fullName: DataTypes.STRING,
-            image: DataTypes.STRING,
+            image: DataTypes.BLOB,
             dateOfBirth: DataTypes.DATE,
             gender: DataTypes.STRING,
             phone: DataTypes.STRING,

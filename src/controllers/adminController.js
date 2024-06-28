@@ -1,7 +1,7 @@
-const { registerAccount, loginAccount, createNewMedicalStaff } = require("../services/adminService");
+const { registerAccount, loginAccount, createNewUser } = require("../services/adminService");
 const register = async (req, res) => {
     try {
-        if (!req.body.email || !req.body.password || !req.body.fullName || !req.body.roleId) {
+        if (!req.body.email || !req.body.password || !req.body.fullName || !req.body.roleId || !req.body.accountType) {
             return res.status(200).json({
                 EC: 1,
                 EM: "Missing required parameters",
@@ -26,7 +26,7 @@ const register = async (req, res) => {
         let accountId = data.DT && data.DT.toString();
 
         if (accountId) {
-            let data1 = await createNewMedicalStaff(req.body.fullName, accountId);
+            let data1 = await createNewUser(req.body.fullName, accountId, req.body.accountType);
             return res.status(200).json({
                 EC: data1.EC,
                 EM: data1.EM,
@@ -81,8 +81,25 @@ const logout = async (req, res) => {
     }
 };
 
+const getAllDoctor = async (req, res) => {
+    try {
+        let data = await getDoctor();
+        return res.status(200).json({
+            EC: data.EC,
+            EM: data.EM,
+            DT: data.DT,
+        });
+    } catch (err) {
+        res.status(500).json({
+            EC: -1,
+            EM: "error from server",
+            DT: "",
+        });
+    }
+};
 module.exports = {
     register,
     login,
     logout,
+    getAllDoctor,
 };

@@ -1,6 +1,6 @@
 const express = require("express");
-const { getSchedule, postSchedule} = require("../controllers/doctorController");
-const { register, login, logout } = require("../controllers/adminController");
+const { getSchedule, postSchedule, getTime } = require("../controllers/doctorController");
+const { register, login, logout, getAllDoctor } = require("../controllers/adminController");
 const router = express.Router();
 
 const initAPIRoutes = (app) => {
@@ -9,10 +9,13 @@ const initAPIRoutes = (app) => {
     router.post("/register", register);
     router.post("/login", login);
     router.post("/logout", logout);
-
+    // Admin
+    router.get("/admin/doctor/all", getAllDoctor)
     // Doctor
-    router.get("/doctor/schedule/all", getSchedule);
+    router.get("/doctor/:id/schedule/all", getSchedule);
     router.post("/doctor/schedule", postSchedule);
+
+    router.get("/time/all", getTime);
 
     return app.use("/api/v1/", router);
 };
