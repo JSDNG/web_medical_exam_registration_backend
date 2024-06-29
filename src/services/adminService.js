@@ -20,7 +20,15 @@ const checkEmail = async (email) => {
 const checkPassword = (password, hashPassword) => {
     return bcrypt.compareSync(password, hashPassword);
 };
-
+const checkUser = async (id) => {
+    let userId = await db.MedicalStaff.findOne({
+        where: { id: id },
+    });
+    if (userId) {
+        return true;
+    }
+    return false;
+};
 const registerAccount = async (rawData) => {
     let hashpass = hashPass(rawData.password);
     try {
@@ -51,7 +59,6 @@ const registerAccount = async (rawData) => {
         };
     }
 };
-
 const loginAccount = async (rawData) => {
     try {
         let account = await db.Account.findOne({
@@ -171,8 +178,255 @@ const createNewUser = async (fullName, accountId, accountType) => {
         };
     }
 };
+const getTime = async () => {
+    try {
+        let results = await db.PeriodOfTime.findAll({ attributes: ["id", "time"] });
+        let data = results && results.length > 0 ? results.map((result) => result.get({ plain: true })) : [];
+        return {
+            EC: 0,
+            EM: "Get the time list",
+            DT: data,
+        };
+    } catch (err) {
+        console.log(err);
+        return {
+            EC: -1,
+            EM: "Something wrongs in service... ",
+            DT: "",
+        };
+    }
+};
+const getMedicalStaff = async (rawData) => {
+    try {
+        if (rawData !== "Bác sĩ" && rawData !== "Nhân viên") {
+            return { EC: 0, EM: "Not found Medical Staff", DT: [] };
+        }
+        const list = await db.MedicalStaff.findAll({
+            attributes: [
+                "id",
+                "fullName",
+                "image",
+                "dateOfBirth",
+                "gender",
+                "phone",
+                "description",
+                "address",
+                "dateCreated",
+            ],
+            include: [
+                {
+                    model: db.Specialty,
+                    attributes: ["id", "specialtyName", "description", "image"],
+                    through: { attributes: [] },
+                },
+                {
+                    model: db.Position,
+                    attributes: ["id", "positionName"],
+                },
+                {
+                    model: db.Account,
+                    attributes: ["id", "email"],
+                    include: { model: db.Role, attributes: ["id", "roleName"] },
+                },
+            ],
+        });
+
+        if (!list || list.length === 0) {
+            return { EC: 0, EM: "No doctor found", DT: [] };
+        }
+
+        const filteredList = list.filter((item) => {
+            const roleName = item?.Account?.Role?.roleName;
+            if (
+                (rawData === "Bác sĩ" && (roleName === "Nhân viên" || roleName === "Quản trị viên")) ||
+                (rawData === "Nhân viên" && (roleName === "Bác sĩ" || roleName === "Quản trị viên"))
+            ) {
+                return false;
+            }
+            if (item.image) {
+                item.image = Buffer.from(item.image, "binary").toString("base64");
+            }
+            if (item.Specialties) {
+                item.Specialties.forEach((specialty) => {
+                    if (specialty.image) {
+                        specialty.image = Buffer.from(specialty.image, "binary").toString("base64");
+                    }
+                });
+            }
+            return true;
+        });
+
+        return { EC: 0, EM: "Get list doctor", DT: filteredList };
+    } catch (err) {
+        console.error(err);
+        return { EC: -1, EM: "Something went wrong in service...", DT: "" };
+    }
+};
+const getMedicalStaffById = async (id) => {
+    try {
+        let isUser = await checkUser(id);
+        if (!isUser) {
+            return {
+                EC: 1,
+                EM: "User doesn't already exist",
+                DT: "",
+            };
+        }
+        let user = await db.MedicalStaff.findOne({
+            where: { id: id },
+            attributes: [
+                "id",
+                "fullName",
+                "image",
+                "dateOfBirth",
+                "gender",
+                "phone",
+                "description",
+                "address",
+                "dateCreated",
+            ],
+            include: [
+                {
+                    model: db.Specialty,
+                    attributes: ["id", "specialtyName", "description", "image"],
+                    through: { attributes: [] }, // Chỉ cần nếu có bảng trung gian
+                },
+                {
+                    model: db.Position,
+                    attributes: ["id", "positionName"],
+                },
+            ],
+            // raw: true,
+            // nest: true,
+        });
+        if (user.image) {
+            user.image = Buffer.from(user.image, "binary").toString("base64");
+        }
+
+        if (user.Specialties && user.Specialties.length > 0) {
+            user.Specialties.forEach((item) => {
+                if (item.image) {
+                    item.image = Buffer.from(item.image, "binary").toString("base64");
+                }
+            });
+        }
+        return {
+            EC: 0,
+            EM: "get user success",
+            DT: user,
+        };
+    } catch (err) {
+        console.log(err);
+        return {
+            EC: -1,
+            EM: "Something wrongs in service... ",
+            DT: "",
+        };
+    }
+};
+const putMedicalStaffById = async (rawData) => {
+    try {
+        let isUserId = await checkUser(rawData.id);
+        if (!isUserId) {
+            return {
+                EC: 1,
+                EM: "User doesn't already exist",
+                DT: "",
+            };
+        }
+        const binaryData = Buffer.from(rawData.image, "base64");
+        let user = await db.MedicalStaff.update(
+            {
+                fullName: rawData.fullName,
+                image: binaryData,
+                dateOfBirth: new Date(rawData.dateOfBirth),
+                gender: rawData.gender,
+                phone: rawData.phone,
+                description: rawData.description,
+                address: rawData.address,
+                positionId: rawData.positionId,
+            },
+            {
+                where: { id: rawData.id },
+            }
+        );
+        return {
+            EC: 0,
+            EM: "User updated successfully",
+            DT: "",
+        };
+    } catch (err) {
+        return {
+            EC: -1,
+            EM: "Something wrongs in service... ",
+            DT: "",
+        };
+    }
+};
+const deleteMedicalStaffById = async (id) => {
+    try {
+        let isSet = await checkStudySetId(id);
+        if (!isSet) {
+            return {
+                EC: 1,
+                EM: "Study Set doesn't already exist",
+                DT: "",
+            };
+        }
+        let data = await db.StudySet.destroy({
+            where: {
+                id: id,
+            },
+        });
+        return {
+            EC: 0,
+            EM: "Deleted Study Set",
+            DT: "",
+        };
+    } catch (err) {
+        return {
+            EC: -1,
+            EM: "Somthing wrongs in service... ",
+            DT: "",
+        };
+    }
+};
+const deleteDoctorSpecialtyById = async (id) => {
+    try {
+        let isUser = await checkUser(id);
+        if (!isUser) {
+            return {
+                EC: 1,
+                EM: "Study Set doesn't already exist",
+                DT: "",
+            };
+        }
+        let data = await db.DoctorSpecialty.destroy({
+            where: {
+                doctorId: id,
+            },
+        });
+        return {
+            EC: 0,
+            EM: "Deleted Study Set",
+            DT: "",
+        };
+    } catch (err) {
+        return {
+            EC: -1,
+            EM: "Somthing wrongs in service... ",
+            DT: "",
+        };
+    }
+};
 module.exports = {
     registerAccount,
     loginAccount,
     createNewUser,
+    getTime,
+    getMedicalStaff,
+    getMedicalStaffById,
+    putMedicalStaffById,
+    deleteMedicalStaffById,
+    deleteDoctorSpecialtyById,
 };

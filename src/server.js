@@ -15,6 +15,18 @@ const hostname = process.env.HOST_NAME;
 app.use(express.json()); // Used to parse JSON bodies
 app.use(express.urlencoded({ extended: true })); //Parse URL-encoded bodies
 
+// Middleware to handle JSON parse errors
+app.use((err, req, res, next) => {
+    if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
+        return res.status(200).json({
+            EC: 1,
+            EM: "Invalid JSON",
+            DT: "",
+        });
+    }
+    next();
+});
+
 // config template engine
 configViewEngine(app);
 
