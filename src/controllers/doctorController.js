@@ -2,15 +2,20 @@ const { getAllSchedule, createSchedule, deleteSchedule } = require("../services/
 
 const postSchedule = async (req, res) => {
     try {
-        if (!req.body.create) {
+        if (!req.body.create && !req.body.delete) {
             return res.status(200).json({
                 EC: 1,
                 EM: "Missing required parameters",
                 DT: "",
             });
         }
-        let data1 = await deleteSchedule(req.body.delete);
-        let data = await createSchedule(req.body.create);
+        let data;
+        if (req.body.delete && req.body.delete.length > 0) {
+            data = await deleteSchedule(req.body.delete);
+        }
+        if (req.body.create && req.body.create.length > 0) {
+            data = await createSchedule(req.body.create);
+        }
         return res.status(200).json({
             EC: data.EC,
             EM: data.EM,
@@ -27,7 +32,23 @@ const postSchedule = async (req, res) => {
 };
 const getSchedule = async (req, res) => {
     try {
-        let data = await getAllSchedule();
+        let data = await getAllSchedule(req.params.id);
+        return res.status(200).json({
+            EC: data.EC,
+            EM: data.EM,
+            DT: data.DT,
+        });
+    } catch (err) {
+        res.status(500).json({
+            EC: -1,
+            EM: "error from server",
+            DT: "",
+        });
+    }
+};
+const deleteScheduleById = async (req, res) => {
+    try {
+        let data = await deleteSchedule([req.params.id]);
         return res.status(200).json({
             EC: data.EC,
             EM: data.EM,
@@ -44,4 +65,5 @@ const getSchedule = async (req, res) => {
 module.exports = {
     postSchedule,
     getSchedule,
+    deleteScheduleById,
 };

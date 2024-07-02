@@ -34,5 +34,6 @@ Open [http://localhost:8081](http://localhost:808) to view it in your browser.
 ### install library
 
 npm install --save-exact sequelize@6.37.3
+
 This section has moved here: [https://www.npmjs.com/package/sequelize]
 Document sequilize: [https://sequelize.org/docs/v6/getting-started/]
