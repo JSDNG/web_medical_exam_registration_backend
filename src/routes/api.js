@@ -1,5 +1,5 @@
 const express = require("express");
-const { getSchedule, postSchedule } = require("../controllers/doctorController");
+const { getSchedule, postSchedule, deleteScheduleById } = require("../controllers/doctorController");
 const {
     register,
     login,
@@ -27,6 +27,7 @@ const initAPIRoutes = (app) => {
     // Doctor
     router.get("/doctor/:id/schedule/all", getSchedule);
     router.post("/doctor/schedule", postSchedule);
+    router.delete("/doctor/schedule/:id", deleteScheduleById);
 
     return app.use("/api/v1/", router);
 };

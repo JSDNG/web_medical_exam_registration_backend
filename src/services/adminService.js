@@ -198,10 +198,10 @@ const getTime = async () => {
 };
 const getMedicalStaff = async (rawData) => {
     try {
-        if (rawData !== "Bác sĩ" && rawData !== "Nhân viên") {
+        if (rawData !== "bac-si" && rawData !== "nhan-vien") {
             return { EC: 0, EM: "Not found Medical Staff", DT: [] };
         }
-        const list = await db.MedicalStaff.findAll({
+        const list = await db.MedilcalStaff.findAll({
             attributes: [
                 "id",
                 "fullName",
@@ -238,8 +238,8 @@ const getMedicalStaff = async (rawData) => {
         const filteredList = list.filter((item) => {
             const roleName = item?.Account?.Role?.roleName;
             if (
-                (rawData === "Bác sĩ" && (roleName === "Nhân viên" || roleName === "Quản trị viên")) ||
-                (rawData === "Nhân viên" && (roleName === "Bác sĩ" || roleName === "Quản trị viên"))
+                (rawData === "bac-si" && (roleName === "Nhân viên" || roleName === "Quản trị viên")) ||
+                (rawData === "nhan-vien" && (roleName === "Bác sĩ" || roleName === "Quản trị viên"))
             ) {
                 return false;
             }

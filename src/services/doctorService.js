@@ -150,7 +150,32 @@ const getAllSchedule = async (id) => {
 
 const deleteSchedule = async (rawData) => {
     try {
-        if (rawData && rawData.length > 0) {
+        if (!rawData || rawData.length === 0) {
+            return {
+                EC: 1,
+                EM: "No schedules to delete",
+                DT: "",
+            };
+        }
+
+        if (rawData.length === 1) {
+            let data = await db.Appointment.findOne({
+                where: { scheduleId: rawData[0] },
+            });
+            if (data) {
+                return {
+                    EC: 1,
+                    EM: "Cannot delete schedule",
+                    DT: "",
+                };
+            }else{
+                return {
+                    EC: 0,
+                    EM: "Can delete schedule",
+                    DT: "",
+                };
+            }
+        } else {
             await db.Schedule.destroy({
                 where: {
                     id: {
@@ -158,6 +183,7 @@ const deleteSchedule = async (rawData) => {
                     },
                 },
             });
+
             return {
                 EC: 0,
                 EM: "Deleted",
@@ -168,11 +194,12 @@ const deleteSchedule = async (rawData) => {
         console.log(err);
         return {
             EC: -1,
-            EM: "Something wrongs in service... ",
+            EM: "Something went wrong in service...",
             DT: "",
         };
     }
 };
+
 module.exports = {
     createSchedule,
     getAllSchedule,

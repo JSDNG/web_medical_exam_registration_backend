@@ -149,16 +149,15 @@ module.exports = {
         //         specialtyId: 2,
         //     },
         // ]);
-        // await queryInterface.bulkInsert("DoctorSpecialty", [
-        //     {
-        //         doctorId: 4,
-        //         specialtyId: 1,
-        //     },
-        //     {
-        //         doctorId: 4,
-        //         specialtyId: 2,
-        //     },
-        // ]);
+        await queryInterface.bulkInsert("Appointment", [
+            {
+                queueNumber: 12345,
+                statusId: 1,
+                scheduleId: 46,
+                patientId: 1,
+                staffId: null,
+            },
+        ]);
     },
 
     async down(queryInterface, Sequelize) {

@@ -98,14 +98,15 @@ const logout = async (req, res) => {
 };
 const getAllMedicalStaff = async (req, res) => {
     try {
-        if (!req.body.medicalStaff) {
+        //console.log(req.query.medicalstaff);
+        if (!req.query.medicalstaff) {
             return res.status(200).json({
                 EC: 1,
                 EM: "Missing required parameters",
                 DT: "",
             });
         }
-        let data = await getMedicalStaff(req.body.medicalStaff);
+        let data = await getMedicalStaff(req.query.medicalstaff);
         return res.status(200).json({
             EC: data.EC,
             EM: data.EM,
