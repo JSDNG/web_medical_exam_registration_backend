@@ -11,6 +11,7 @@ module.exports = (sequelize, DataTypes) => {
             // define association here
             MedicalRecord.belongsTo(models.MedicalStaff, { foreignKey: "doctorId" });
             MedicalRecord.belongsTo(models.Patient, { foreignKey: "patientId" });
+            MedicalRecord.belongsTo(models.Relative, { foreignKey: "relativeId" });
             MedicalRecord.hasMany(models.Prescription, { foreignKey: "recordId" });
             MedicalRecord.hasMany(models.Invoice, { foreignKey: "recordId" });
             MedicalRecord.belongsTo(models.Appointment, { foreignKey: "appointmentId" });
@@ -26,6 +27,7 @@ module.exports = (sequelize, DataTypes) => {
             treatmentPlan: DataTypes.STRING,
             dateCreated: DataTypes.DATE,
             patientId: DataTypes.INTEGER,
+            relativeId: DataTypes.INTEGER,
             doctorId: DataTypes.INTEGER,
             statusId: DataTypes.INTEGER,
             appointmentId: DataTypes.INTEGER,

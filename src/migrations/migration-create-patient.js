@@ -17,9 +17,6 @@ module.exports = {
                 fullName: {
                     type: Sequelize.STRING,
                 },
-                image: {
-                    type: Sequelize.BLOB,
-                },
                 dateOfBirth: {
                     type: Sequelize.DATE,
                 },

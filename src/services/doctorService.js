@@ -147,7 +147,6 @@ const getAllSchedule = async (id) => {
         };
     }
 };
-
 const deleteSchedule = async (rawData) => {
     try {
         if (!rawData || rawData.length === 0) {
@@ -168,7 +167,7 @@ const deleteSchedule = async (rawData) => {
                     EM: "Cannot delete schedule",
                     DT: "",
                 };
-            }else{
+            } else {
                 return {
                     EC: 0,
                     EM: "Can delete schedule",
@@ -199,9 +198,155 @@ const deleteSchedule = async (rawData) => {
         };
     }
 };
+const getAllMedicalRecord = async (id) => {
+    try {
+        // Lấy dữ liệu từ cơ sở dữ liệu
+        // let data = await db.MedicalRecord.findAll({
+        //     where: { doctorId: id },
+        //     attributes: [
+        //         "id",
+        //         "medicalHistory",
+        //         "reason",
+        //         "diagnosis",
+        //         "treatmentPlan",
+        //         "dateCreated",
+        //         "patientId",
+        //         "doctorId",
+        //         "statusId",
+        //         "appointmentId",
+        //         "specialtyId",
+        //     ],
+        //     raw: true,
+        //     nest: true,
+        // });
+        let data = await db.Appointment.findAll({
+            where: { doctorId: id },
+            attributes: [
+                "id",
+                "medicalHistory",
+                "reason",
+                "diagnosis",
+                "treatmentPlan",
+                "dateCreated",
+                "patientId",
+                "doctorId",
+                "statusId",
+                "appointmentId",
+                "specialtyId",
+            ],
+        });
+        return {
+            EC: 0,
+            EM: "Get the Medical Record list from appointment",
+            DT: data,
+        };
+    } catch (err) {
+        console.log(err);
+        return {
+            EC: -1,
+            EM: "Something went wrong in service...",
+            DT: "",
+        };
+    }
+};
+
+const getAllAppointmentfromOneDoctor = async (id) => {
+    try {
+        // Lấy dữ liệu từ cơ sở dữ liệu
+        let data = await db.Appointment.findAll({
+            attributes: ["id", "staffId"],
+            include: [
+                {
+                    model: db.AllStatus,
+                    attributes: ["id", "statusName"],
+                },
+                {
+                    model: db.Patient,
+                    attributes: ["id", "fullName", "dateOfBirth", "gender", "phone", "address"],
+                },
+                {
+                    model: db.Schedule,
+                    attributes: ["id", "price", "date"],
+                    include: [
+                        {
+                            model: db.MedicalStaff,
+                            attributes: [
+                                "id",
+                                "fullName",
+                                "image",
+                                "dateOfBirth",
+                                "gender",
+                                "phone",
+                                "description",
+                                "address",
+                            ],
+                        },
+                        {
+                            model: db.PeriodOfTime,
+                            attributes: ["id", "time"],
+                        },
+                    ],
+                },
+            ],
+            raw: true,
+            nest: true,
+        });
+
+        // Lọc theo id của bác sĩ
+        let result = data.filter((item) => item.Schedule.MedicalStaff.id === +id && item.AllStatus.id === 3);
+
+        // Kiểm tra nếu data không có giá trị thì trả về mảng rỗng
+        if (!data || data.length === 0 || result.length === 0) {
+            return {
+                EC: 0,
+                EM: "No Appointments found",
+                DT: [],
+            };
+        }
+        // Sắp xếp theo date và time
+        const sortedData = result.sort((a, b) => {
+            // So sánh theo date
+            const dateA = new Date(a.Schedule.date);
+            const dateB = new Date(b.Schedule.date);
+            if (dateA < dateB) return -1;
+            if (dateA > dateB) return 1;
+
+            // Nếu date giống nhau, so sánh theo time
+            const timeA = a.Schedule.PeriodOfTime.time.split(" - ")[0];
+            const timeB = b.Schedule.PeriodOfTime.time.split(" - ")[0];
+            return timeA.localeCompare(timeB);
+        });
+
+        // Nhóm các đối tượng theo date và định dạng lại theo yêu cầu
+        const groupedData = sortedData.reduce((acc, currentItem) => {
+            const date = currentItem.Schedule.date.toISOString().split("T")[0]; // Lấy phần ngày
+            if (!acc[date]) {
+                acc[date] = [{ "date": date, data: [] }];
+            }
+            acc[date][0].data.push(currentItem);
+            return acc;
+        }, {});
+        // Biến đổi DT thành mảng
+        const DTArray = Object.values(groupedData).flat();
+        return {
+            EC: 0,
+            EM: "Get the Appointment list",
+            DT: DTArray,
+        };
+    } catch (err) {
+        console.log(err);
+        return {
+            EC: -1,
+            EM: "Something went wrong in service...",
+            DT: "",
+        };
+    }
+};
 
 module.exports = {
     createSchedule,
     getAllSchedule,
     deleteSchedule,
+    getAllMedicalRecord,
+    getAllAppointmentfromOneDoctor,
 };

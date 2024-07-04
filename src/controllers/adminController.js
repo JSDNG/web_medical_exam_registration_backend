@@ -3,10 +3,11 @@ const {
     loginAccount,
     createNewUser,
     getTime,
+    getSpecialty,
     getMedicalStaff,
     getMedicalStaffById,
     putMedicalStaffById,
-    deleteMedicalStaffById,
+    deleteMedicalStaffById,  
     deleteDoctorSpecialtyById,
 } = require("../services/adminService");
 const register = async (req, res) => {
@@ -98,7 +99,7 @@ const logout = async (req, res) => {
 };
 const getAllMedicalStaff = async (req, res) => {
     try {
-        //console.log(req.query.medicalstaff);
+        console.log(req.query.medicalstaff);
         if (!req.query.medicalstaff) {
             return res.status(200).json({
                 EC: 1,
@@ -136,6 +137,22 @@ const getAllTime = async (req, res) => {
         });
     }
 };
+const getAllSpecialty = async (req, res) => {
+    try {
+        let data = await getSpecialty();
+        return res.status(200).json({
+            EC: data.EC,
+            EM: data.EM,
+            DT: data.DT,
+        });
+    } catch (err) {
+        res.status(500).json({
+            EC: -1,
+            EM: "error from server",
+            DT: "",
+        });
+    }
+};
 const getOneMedicalStaff = async (req, res) => {
     try {
         let data = await getMedicalStaffById(req.params.id);
@@ -154,7 +171,7 @@ const getOneMedicalStaff = async (req, res) => {
 };
 const putOneMedicalStaff = async (req, res) => {
     try {
-        if (!req.body.id || !req.body.username) {
+        if (!req.body.id) {
             return res.status(200).json({
                 EC: 1,
                 EM: "missing required params",
@@ -205,13 +222,16 @@ const deleteOneMedicalStaff = async (req, res) => {
         });
     }
 };
+
 module.exports = {
     register,
     login,
     logout,
     getAllMedicalStaff,
     getAllTime,
+    getAllSpecialty,
     getOneMedicalStaff,
     putOneMedicalStaff,
     deleteOneMedicalStaff,
+
 };

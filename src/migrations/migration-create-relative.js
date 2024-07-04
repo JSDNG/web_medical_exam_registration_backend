@@ -6,7 +6,7 @@ const { toDefaultValue } = require("sequelize/lib/utils");
 module.exports = {
     async up(queryInterface, Sequelize) {
         await queryInterface.createTable(
-            "MedicalRecord",
+            "Relative",
             {
                 id: {
                     allowNull: false,
@@ -14,37 +14,25 @@ module.exports = {
                     primaryKey: true,
                     type: Sequelize.INTEGER,
                 },
-                medicalHistory: {
+                fullName: {
                     type: Sequelize.STRING,
                 },
-                reason: {
+                dateOfBirth: {
+                    type: Sequelize.DATE,
+                },
+                gender: {
                     type: Sequelize.STRING,
                 },
-                diagnosis: {
+                phone: {
                     type: Sequelize.STRING,
                 },
-                treatmentPlan: {
+                address: {
                     type: Sequelize.STRING,
                 },
                 dateCreated: {
                     type: Sequelize.DATE,
                 },
                 patientId: {
-                    type: Sequelize.INTEGER,
-                },
-                relativeId: {
-                    type: Sequelize.INTEGER,
-                },
-                doctorId: {
-                    type: Sequelize.INTEGER,
-                },
-                statusId: {
-                    type: Sequelize.INTEGER,
-                },
-                appointmentId: {
-                    type: Sequelize.INTEGER,
-                },
-                specialtyId: {
                     type: Sequelize.INTEGER,
                 },
                 createdAt: {
@@ -63,6 +51,6 @@ module.exports = {
         );
     },
     async down(queryInterface, Sequelize) {
-        await queryInterface.dropTable("MedicalRecord");
+        await queryInterface.dropTable("Relative");
     },
 };

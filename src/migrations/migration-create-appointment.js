@@ -14,9 +14,6 @@ module.exports = {
                     primaryKey: true,
                     type: Sequelize.INTEGER,
                 },
-                queueNumber: {
-                    type: Sequelize.INTEGER,
-                },
                 statusId: {
                     type: Sequelize.INTEGER,
                 },

@@ -1,5 +1,5 @@
 require("dotenv").config();
-const db = require("../models");
+const db = require("../models/index");
 const bcrypt = require("bcryptjs");
 const salt = bcrypt.genSaltSync(10);
 const { Op } = require("sequelize");
@@ -105,7 +105,7 @@ const loginAccount = async (rawData) => {
         } else if (account.accountType === "Patient") {
             userPromise = db.Patient.findOne({
                 where: { accountId: account.id },
-                attributes: ["id", "fullName", "image", "dateOfBirth", "gender", "phone", "address", "dateCreated"],
+                attributes: ["id", "fullName", "dateOfBirth", "gender", "phone", "address", "dateCreated"],
             });
         }
 
@@ -196,12 +196,35 @@ const getTime = async () => {
         };
     }
 };
+const getSpecialty = async () => {
+    try {
+        let results = await db.Specialty.findAll({ attributes: ["id", "specialtyName", "description", "image"] });
+        results.forEach((specialty) => {
+            if (specialty.image) {
+                specialty.image = Buffer.from(specialty.image, "binary").toString("base64");
+            }
+        });
+        let data = results && results.length > 0 ? results.map((result) => result.get({ plain: true })) : [];
+        return {
+            EC: 0,
+            EM: "Get the specialty list",
+            DT: data,
+        };
+    } catch (err) {
+        console.log(err);
+        return {
+            EC: -1,
+            EM: "Something wrongs in service... ",
+            DT: "",
+        };
+    }
+};
 const getMedicalStaff = async (rawData) => {
     try {
         if (rawData !== "bac-si" && rawData !== "nhan-vien") {
             return { EC: 0, EM: "Not found Medical Staff", DT: [] };
         }
-        const list = await db.MedilcalStaff.findAll({
+        const list = await db.MedicalStaff.findAll({
             attributes: [
                 "id",
                 "fullName",
@@ -334,12 +357,12 @@ const putMedicalStaffById = async (rawData) => {
                 DT: "",
             };
         }
-        const binaryData = Buffer.from(rawData.image, "base64");
+        //const binaryData = Buffer.from(rawData.image, "base64");
         let user = await db.MedicalStaff.update(
             {
                 fullName: rawData.fullName,
-                image: binaryData,
-                dateOfBirth: new Date(rawData.dateOfBirth),
+                image: null,
+                //dateOfBirth: new Date(rawData.dateOfBirth),
                 gender: rawData.gender,
                 phone: rawData.phone,
                 description: rawData.description,
@@ -356,6 +379,7 @@ const putMedicalStaffById = async (rawData) => {
             DT: "",
         };
     } catch (err) {
+        console.log(err);
         return {
             EC: -1,
             EM: "Something wrongs in service... ",
@@ -419,11 +443,13 @@ const deleteDoctorSpecialtyById = async (id) => {
         };
     }
 };
+
 module.exports = {
     registerAccount,
     loginAccount,
     createNewUser,
     getTime,
+    getSpecialty,
     getMedicalStaff,
     getMedicalStaffById,
     putMedicalStaffById,

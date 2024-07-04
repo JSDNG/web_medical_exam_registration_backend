@@ -1,4 +1,4 @@
-const { getAllSchedule, createSchedule, deleteSchedule } = require("../services/doctorService");
+const { getAllSchedule, createSchedule, deleteSchedule, getAllMedicalRecord, getAllAppointmentfromOneDoctor } = require("../services/doctorService");
 
 const postSchedule = async (req, res) => {
     try {
@@ -62,8 +62,43 @@ const deleteScheduleById = async (req, res) => {
         });
     }
 };
+const getAllMedicalRecordById = async (req, res) => {
+    try {
+        console.log(req.query.id);
+        let data = await getAllMedicalRecord(req.query.id);
+        return res.status(200).json({
+            EC: data.EC,
+            EM: data.EM,
+            DT: data.DT,
+        });
+    } catch (err) {
+        res.status(500).json({
+            EC: -1,
+            EM: "error from server",
+            DT: "",
+        });
+    }
+};
+const getAllAppointment = async (req, res) => {
+    try {
+        let data = await getAllAppointmentfromOneDoctor(req.query.id);
+        return res.status(200).json({
+            EC: data.EC,
+            EM: data.EM,
+            DT: data.DT,
+        });
+    } catch (err) {
+        res.status(500).json({
+            EC: -1,
+            EM: "error from server",
+            DT: "",
+        });
+    }
+};
 module.exports = {
     postSchedule,
     getSchedule,
     deleteScheduleById,
+    getAllMedicalRecordById,
+    getAllAppointment,
 };
