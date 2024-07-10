@@ -254,9 +254,8 @@ const getAllAppointmentfromOneDoctor = async (id) => {
             raw: true,
             nest: true,
         });
-        console.log(id);
         // Lọc theo id của bác sĩ
-        let result = data.filter((item) => item.Schedule.MedicalStaff.id === +id && item.AllStatus.id === 1);
+        let result = data.filter((item) => item.Schedule.MedicalStaff.id === +id && item.AllStatus.id === 2);
 
         // Kiểm tra nếu data không có giá trị thì trả về mảng rỗng
         if (!data || data.length === 0 || result.length === 0) {
@@ -309,11 +308,11 @@ const getAllAppointmentfromOneDoctor = async (id) => {
                             diagnosis: item.MedicalRecords.diagnosis,
                             statusMR: item.MedicalRecords.AllStatus.statusName,
                             specialtyMR: item.MedicalRecords.Specialty.specialtyName,
-                            Patient:
-                                item.MedicalRecords.Relative.id !== null
-                                    ? item.MedicalRecords.Relative
-                                    : item.MedicalRecords.Patient,
                         },
+                        Patient:
+                            item.MedicalRecords.Relative.id !== null
+                                ? item.MedicalRecords.Relative
+                                : item.MedicalRecords.Patient,
                     };
                     return items;
                 }),

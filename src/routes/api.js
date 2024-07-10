@@ -4,6 +4,7 @@ const {
     postSchedule,
     deleteScheduleById,
     getAllAppointment,
+    examiningDoctor,
 } = require("../controllers/doctorController");
 const {
     register,
@@ -49,6 +50,7 @@ const initAPIRoutes = (app) => {
     router.post("/doctor/schedule", postSchedule);
     router.delete("/doctor/schedule/:id", deleteScheduleById);
     router.get("/doctor/appointment-from-doctor/all", getAllAppointment);
+    router.put("/doctor/examining-doctor", examiningDoctor);
     // Staff
     router.put("/staff/appointment", putAppointment);
 

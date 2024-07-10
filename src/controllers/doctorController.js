@@ -94,14 +94,16 @@ const examiningDoctor = async (req, res) => {
                 DT: "",
             });
         }
-        let data = await updateAppointment();
-        let data1 = await putMedicalRecordById();
+
+         await updateAppointment(req.body.appointment);
+        let data = await putMedicalRecordById(req.body.medicalRecord);
         return res.status(200).json({
             EC: data.EC,
             EM: data.EM,
             DT: data.DT,
         });
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
