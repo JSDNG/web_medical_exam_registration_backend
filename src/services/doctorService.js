@@ -26,7 +26,7 @@ const createSchedule = async (rawData) => {
         // Lấy thông tin lịch hiện tại từ cơ sở dữ liệu
         let dataOld = await db.Schedule.findAll({
             where: { doctorId: rawData[0].doctorId, date: rawData[0].date },
-            attributes: ["price", "date", "doctorId", "timeId"],
+            attributes: ["date", "doctorId", "timeId"],
             raw: true,
         });
 
@@ -68,7 +68,7 @@ const getAllSchedule = async (id) => {
         // Lấy dữ liệu từ cơ sở dữ liệu
         let data = await db.Schedule.findAll({
             where: { doctorId: id },
-            attributes: ["id", "price", "date", "doctorId", "timeId"],
+            attributes: ["id", "date", "doctorId", "timeId"],
             raw: true,
             nest: true,
             order: [["date", "ASC"]],
@@ -198,88 +198,23 @@ const deleteSchedule = async (rawData) => {
         };
     }
 };
-const getAllMedicalRecord = async (id) => {
-    try {
-        // Lấy dữ liệu từ cơ sở dữ liệu
-        // let data = await db.MedicalRecord.findAll({
-        //     where: { doctorId: id },
-        //     attributes: [
-        //         "id",
-        //         "medicalHistory",
-        //         "reason",
-        //         "diagnosis",
-        //         "treatmentPlan",
-        //         "dateCreated",
-        //         "patientId",
-        //         "doctorId",
-        //         "statusId",
-        //         "appointmentId",
-        //         "specialtyId",
-        //     ],
-        //     raw: true,
-        //     nest: true,
-        // });
-        let data = await db.Appointment.findAll({
-            where: { doctorId: id },
-            attributes: [
-                "id",
-                "medicalHistory",
-                "reason",
-                "diagnosis",
-                "treatmentPlan",
-                "dateCreated",
-                "patientId",
-                "doctorId",
-                "statusId",
-                "appointmentId",
-                "specialtyId",
-            ],
-        });
-        return {
-            EC: 0,
-            EM: "Get the Medical Record list from appointment",
-            DT: data,
-        };
-    } catch (err) {
-        console.log(err);
-        return {
-            EC: -1,
-            EM: "Something went wrong in service...",
-            DT: "",
-        };
-    }
-};
-
 const getAllAppointmentfromOneDoctor = async (id) => {
     try {
         // Lấy dữ liệu từ cơ sở dữ liệu
         let data = await db.Appointment.findAll({
-            attributes: ["id", "staffId"],
+            attributes: ["id", "appointmentNumber", "staffId"],
             include: [
                 {
                     model: db.AllStatus,
                     attributes: ["id", "statusName"],
                 },
                 {
-                    model: db.Patient,
-                    attributes: ["id", "fullName", "dateOfBirth", "gender", "phone", "address"],
-                },
-                {
                     model: db.Schedule,
-                    attributes: ["id", "price", "date"],
+                    attributes: ["id", "date"],
                     include: [
                         {
                             model: db.MedicalStaff,
-                            attributes: [
-                                "id",
-                                "fullName",
-                                "image",
-                                "dateOfBirth",
-                                "gender",
-                                "phone",
-                                "description",
-                                "address",
-                            ],
+                            attributes: ["id", "price"],
                         },
                         {
                             model: db.PeriodOfTime,
@@ -287,13 +222,41 @@ const getAllAppointmentfromOneDoctor = async (id) => {
                         },
                     ],
                 },
+                {
+                    model: db.MedicalRecord,
+                    attributes: ["id", "medicalHistory", "reason", "diagnosis"],
+                    include: [
+                        {
+                            model: db.Relative,
+                            attributes: ["id", "fullName", "dateOfBirth", "gender", "phone", "email", "address"],
+                        },
+                        {
+                            model: db.Patient,
+                            attributes: ["id", "fullName", "dateOfBirth", "gender", "phone", "address"],
+                            include: [
+                                {
+                                    model: db.Account,
+                                    attributes: ["email"],
+                                },
+                            ],
+                        },
+                        {
+                            model: db.AllStatus,
+                            attributes: ["id", "statusName"],
+                        },
+                        {
+                            model: db.Specialty,
+                            attributes: ["id", "specialtyName"],
+                        },
+                    ],
+                },
             ],
             raw: true,
             nest: true,
         });
-
+        console.log(id);
         // Lọc theo id của bác sĩ
-        let result = data.filter((item) => item.Schedule.MedicalStaff.id === +id && item.AllStatus.id === 3);
+        let result = data.filter((item) => item.Schedule.MedicalStaff.id === +id && item.AllStatus.id === 1);
 
         // Kiểm tra nếu data không có giá trị thì trả về mảng rỗng
         if (!data || data.length === 0 || result.length === 0) {
@@ -321,17 +284,45 @@ const getAllAppointmentfromOneDoctor = async (id) => {
         const groupedData = sortedData.reduce((acc, currentItem) => {
             const date = currentItem.Schedule.date.toISOString().split("T")[0]; // Lấy phần ngày
             if (!acc[date]) {
-                acc[date] = [{ "date": date, data: [] }];
+                acc[date] = [{ date: date, data: [] }];
             }
             acc[date][0].data.push(currentItem);
             return acc;
         }, {});
         // Biến đổi DT thành mảng
         const DTArray = Object.values(groupedData).flat();
+
+        let results = DTArray.map((item) => {
+            return {
+                date: item.date,
+                data: item.data.map((item) => {
+                    let items = {
+                        id: item.id,
+                        appointmentNumber: item.appointmentNumber,
+                        statusAp: item.AllStatus.statusName,
+                        price: item.Schedule.MedicalStaff.price,
+                        time: item.Schedule.PeriodOfTime.time,
+                        MedicalRecords: {
+                            id: item.MedicalRecords.id,
+                            medicalHistory: item.MedicalRecords.medicalHistory,
+                            reason: item.MedicalRecords.reason,
+                            diagnosis: item.MedicalRecords.diagnosis,
+                            statusMR: item.MedicalRecords.AllStatus.statusName,
+                            specialtyMR: item.MedicalRecords.Specialty.specialtyName,
+                            Patient:
+                                item.MedicalRecords.Relative.id !== null
+                                    ? item.MedicalRecords.Relative
+                                    : item.MedicalRecords.Patient,
+                        },
+                    };
+                    return items;
+                }),
+            };
+        });
         return {
             EC: 0,
             EM: "Get the Appointment list",
-            DT: DTArray,
+            DT: results,
         };
     } catch (err) {
         console.log(err);
@@ -342,11 +333,34 @@ const getAllAppointmentfromOneDoctor = async (id) => {
         };
     }
 };
+const createDoctorSpecialty = async (rawData, id) => {
+    try {
+        let result = rawData.map((specialtyId) => ({
+            doctorId: id,
+            specialtyId: specialtyId,
+        }));
 
+        if (result.length > 0) {
+            await db.DoctorSpecialty.bulkCreate(result);
+        }
+        return {
+            EC: 0,
+            EM: "Schedule created successfully",
+            DT: "",
+        };
+    } catch (err) {
+        console.error(err);
+        return {
+            EC: -1,
+            EM: "Something wrongs in service...",
+            DT: "",
+        };
+    }
+};
 module.exports = {
     createSchedule,
     getAllSchedule,
     deleteSchedule,
-    getAllMedicalRecord,
     getAllAppointmentfromOneDoctor,
+    createDoctorSpecialty,
 };

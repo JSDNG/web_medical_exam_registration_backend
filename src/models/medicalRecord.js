@@ -24,7 +24,6 @@ module.exports = (sequelize, DataTypes) => {
             medicalHistory: DataTypes.STRING,
             reason: DataTypes.STRING,
             diagnosis: DataTypes.STRING,
-            treatmentPlan: DataTypes.STRING,
             dateCreated: DataTypes.DATE,
             patientId: DataTypes.INTEGER,
             relativeId: DataTypes.INTEGER,

@@ -1,4 +1,11 @@
-const { getAllSchedule, createSchedule, deleteSchedule, getAllMedicalRecord, getAllAppointmentfromOneDoctor } = require("../services/doctorService");
+const {
+    getAllSchedule,
+    createSchedule,
+    deleteSchedule,
+    getAllAppointmentfromOneDoctor,
+} = require("../services/doctorService");
+const { putMedicalRecordById } = require("../services/patientService");
+const { updateAppointment } = require("../services/staffService");
 
 const postSchedule = async (req, res) => {
     try {
@@ -62,10 +69,9 @@ const deleteScheduleById = async (req, res) => {
         });
     }
 };
-const getAllMedicalRecordById = async (req, res) => {
+const getAllAppointment = async (req, res) => {
     try {
-        console.log(req.query.id);
-        let data = await getAllMedicalRecord(req.query.id);
+        let data = await getAllAppointmentfromOneDoctor(req.query.id);
         return res.status(200).json({
             EC: data.EC,
             EM: data.EM,
@@ -79,9 +85,17 @@ const getAllMedicalRecordById = async (req, res) => {
         });
     }
 };
-const getAllAppointment = async (req, res) => {
+const examiningDoctor = async (req, res) => {
     try {
-        let data = await getAllAppointmentfromOneDoctor(req.query.id);
+        if (!req.body) {
+            return res.status(200).json({
+                EC: 1,
+                EM: "Missing required parameters",
+                DT: "",
+            });
+        }
+        let data = await updateAppointment();
+        let data1 = await putMedicalRecordById();
         return res.status(200).json({
             EC: data.EC,
             EM: data.EM,
@@ -99,6 +113,6 @@ module.exports = {
     postSchedule,
     getSchedule,
     deleteScheduleById,
-    getAllMedicalRecordById,
     getAllAppointment,
+    examiningDoctor,
 };

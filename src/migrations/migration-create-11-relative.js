@@ -26,14 +26,19 @@ module.exports = {
                 phone: {
                     type: Sequelize.STRING,
                 },
+                email: {
+                    type: Sequelize.STRING,
+                },
                 address: {
                     type: Sequelize.STRING,
                 },
-                dateCreated: {
-                    type: Sequelize.DATE,
-                },
                 patientId: {
                     type: Sequelize.INTEGER,
+                    allowNull: false,
+                    references: {
+                        model: "Patient",
+                        key: "id",
+                    },
                 },
                 createdAt: {
                     allowNull: false,

@@ -7,9 +7,10 @@ const {
     getMedicalStaff,
     getMedicalStaffById,
     putMedicalStaffById,
-    deleteMedicalStaffById,  
+    deleteMedicalStaffById,
     deleteDoctorSpecialtyById,
 } = require("../services/adminService");
+const { createDoctorSpecialty } = require("../services/doctorService");
 const register = async (req, res) => {
     try {
         if (!req.body.email || !req.body.password || !req.body.fullName || !req.body.roleId || !req.body.accountType) {
@@ -154,11 +155,11 @@ const getAllSpecialty = async (req, res) => {
     }
 };
 const getOneMedicalStaff = async (req, res) => {
-    try {
+    try {  
         let data = await getMedicalStaffById(req.params.id);
         return res.status(200).json({
             EC: data.EC,
-            EM: data.EM,
+            EM: data.EM, 
             DT: data.DT,
         });
     } catch (err) {
@@ -178,6 +179,9 @@ const putOneMedicalStaff = async (req, res) => {
                 DT: "",
             });
         } else {
+            if (req.body.specialty.length > 0) {
+                await createDoctorSpecialty(req.body.specialty, req.body.id);
+            }
             let data = await putMedicalStaffById(req.body);
             return res.status(200).json({
                 EC: data.EC,
@@ -233,5 +237,4 @@ module.exports = {
     getOneMedicalStaff,
     putOneMedicalStaff,
     deleteOneMedicalStaff,
-
 };

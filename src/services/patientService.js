@@ -2,6 +2,7 @@ const db = require("../models");
 const _ = require("lodash");
 const { reduce } = require("lodash");
 const { Op } = require("sequelize");
+const Sequelize = require("sequelize");
 const checkUser = async (id) => {
     let userId = await db.Patient.findOne({
         where: { id: id },
@@ -13,31 +14,43 @@ const checkUser = async (id) => {
 };
 const createAppointment = async (rawData) => {
     try {
-        let data = await db.Appointment.create({
+        const maxAppointment = await db.Appointment.findOne({
+            attributes: [[Sequelize.fn("max", Sequelize.col("appointmentNumber")), "maxAppointmentNumber"]],
+            raw: true,
+        });
+        const maxAppointmentNumber = maxAppointment ? maxAppointment.maxAppointmentNumber || 0 : 0;
+
+        const nextAppointmentNumber = maxAppointmentNumber + 1;
+
+        const data = await db.Appointment.create({
+            appointmentNumber: nextAppointmentNumber,
             statusId: rawData.statusId,
             scheduleId: rawData.scheduleId,
             patientId: rawData.patientId,
         });
+
         return {
             EC: 0,
             EM: "Appointment created successfully",
             DT: data.id,
         };
     } catch (err) {
+        console.error("Error:", err);
         return {
             EC: -1,
-            EM: "Something wrongs in service... ",
+            EM: "Something went wrong in service...",
             DT: "",
         };
     }
 };
-const createMedicalRecord = async (rawData, appointmentId) => {
+const createMedicalRecord = async (rawData, appointmentId, relativeId) => {
     try {
         let data = await db.MedicalRecord.create({
             medicalHistory: rawData.medicalHistory,
             reason: rawData.reason,
             dateCreated: Date.now(),
             patientId: rawData.patientId,
+            relativeId: relativeId,
             doctorId: rawData.doctorId,
             statusId: 6,
             appointmentId: appointmentId,
@@ -46,9 +59,10 @@ const createMedicalRecord = async (rawData, appointmentId) => {
         return {
             EC: 0,
             EM: "Medical Record created successfully",
-            DT: data.id,
+            DT: data,
         };
     } catch (err) {
+        console.log(err);
         return {
             EC: -1,
             EM: "Something wrongs in service... ",
@@ -56,12 +70,63 @@ const createMedicalRecord = async (rawData, appointmentId) => {
         };
     }
 };
-const getAllAppointment = async () => {
+const createNewRelative = async (rawData) => {
+    try {
+        let data = await db.Relative.create({
+            fullName: rawData.fullName,
+            //dateOfBirth: new Date(rawData.dateOfBirth),
+            gender: rawData.gender,
+            phone: rawData.phone,
+            email: rawData.email,
+            address: rawData.address,
+            patientId: rawData.patientId,
+        });
+        return {
+            EC: 0,
+            EM: "Relative created successfully",
+            DT: data.id,
+        };
+    } catch (err) {
+        console.log(err);
+        return {
+            EC: -1,
+            EM: "Something wrongs in service... ",
+            DT: "",
+        };
+    }
+};
+const deleteRelative = async (id) => {
+    try {
+        if (!id) {
+            return {
+                EC: 1,
+                EM: "No Relative to delete",
+                DT: "",
+            };
+        }
+        await db.Relative.destroy({
+            where: { id: id },
+        });
+        return {
+            EC: 0,
+            EM: "Deleted",
+            DT: "",
+        };
+    } catch (err) {
+        console.log(err);
+        return {
+            EC: -1,
+            EM: "Something went wrong in service...",
+            DT: "",
+        };
+    }
+};
+const getAllAppointment = async (id) => {
     try {
         // Lấy dữ liệu từ cơ sở dữ liệu
         let data = await db.Appointment.findAll({
-            // where: { patientId: id },
-            attributes: ["id"],
+            where: [{ patientId: id }, { statusId: 3 }],
+            attributes: ["id", "appointmentNumber"],
             include: [
                 {
                     model: db.AllStatus,
@@ -73,7 +138,7 @@ const getAllAppointment = async () => {
                 },
                 {
                     model: db.Schedule,
-                    attributes: ["id", "price", "date"],
+                    attributes: ["id", "date"],
                     include: [
                         {
                             model: db.MedicalStaff,
@@ -85,6 +150,7 @@ const getAllAppointment = async () => {
                                 "gender",
                                 "phone",
                                 "description",
+                                "price",
                                 "address",
                             ],
                         },
@@ -178,7 +244,6 @@ const putMedicalRecordById = async (rawData) => {
                 medicalHistory: rawData.medicalHistory,
                 reason: rawData.reason,
                 diagnosis: rawData.diagnosis,
-                treatmentPlan: rawData.treatmentPlan,
                 statusId: rawData.statusId,
             },
             {
@@ -187,7 +252,7 @@ const putMedicalRecordById = async (rawData) => {
         );
         return {
             EC: 0,
-            EM: "User updated successfully",
+            EM: "Medical Record updated successfully",
             DT: "",
         };
     } catch (err) {
@@ -211,7 +276,7 @@ const putPatientInfoById = async (rawData) => {
         let user = await db.Patient.update(
             {
                 fullName: rawData.fullName,
-                dateOfBirth: new Date(rawData.dateOfBirth),
+                //dateOfBirth: new Date(rawData.dateOfBirth),
                 gender: rawData.gender,
                 phone: rawData.phone,
                 address: rawData.address,
@@ -239,6 +304,8 @@ module.exports = {
     getAllAppointment,
     deleteAppointment,
     createMedicalRecord,
+    createNewRelative,
+    deleteRelative,
     deleteMedicalRecord,
     putMedicalRecordById,
     putPatientInfoById,
