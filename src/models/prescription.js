@@ -11,12 +11,14 @@ module.exports = (sequelize, DataTypes) => {
             // define association here
             Prescription.belongsTo(models.MedicalStaff, { foreignKey: "doctorId" });
             Prescription.belongsTo(models.MedicalRecord, { foreignKey: "recordId" });
-            Prescription.hasMany(models.Medicine, { foreignKey: "prescriptionId" });
         }
     }
     Prescription.init(
         {
-            dateCreated: DataTypes.DATE,
+            medicationName: DataTypes.STRING,
+            price: DataTypes.STRING,
+            quantity: DataTypes.INTEGER,
+            instruction: DataTypes.STRING,
             doctorId: DataTypes.INTEGER,
             recordId: DataTypes.INTEGER,
         },

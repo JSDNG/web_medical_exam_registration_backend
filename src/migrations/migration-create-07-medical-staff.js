@@ -6,7 +6,7 @@ const { toDefaultValue } = require("sequelize/lib/utils");
 module.exports = {
     async up(queryInterface, Sequelize) {
         await queryInterface.createTable(
-            "Prescription",
+            "MedicalStaff",
             {
                 id: {
                     allowNull: false,
@@ -14,14 +14,45 @@ module.exports = {
                     primaryKey: true,
                     type: Sequelize.INTEGER,
                 },
-                dateCreated: {
+                fullName: {
+                    type: Sequelize.STRING,
+                },
+                image: {
+                    type: Sequelize.BLOB,
+                },
+                dateOfBirth: {
                     type: Sequelize.DATE,
                 },
-                doctorId: {
-                    type: Sequelize.INTEGER,
+                gender: {
+                    type: Sequelize.STRING,
                 },
-                recordId: {
+                phone: {
+                    type: Sequelize.STRING,
+                },
+                description: {
+                    type: Sequelize.STRING,
+                },
+                address: {
+                    type: Sequelize.STRING,
+                },
+                price: {
+                    type: Sequelize.STRING,
+                },
+                accountId: {
                     type: Sequelize.INTEGER,
+                    allowNull: false,
+                    references: {
+                        model: "Account",
+                        key: "id",
+                    },
+                },
+                positionId: {
+                    type: Sequelize.INTEGER,
+                    allowNull: true,
+                    references: {
+                        model: "Position",
+                        key: "id",
+                    },
                 },
                 createdAt: {
                     allowNull: false,
@@ -39,6 +70,6 @@ module.exports = {
         );
     },
     async down(queryInterface, Sequelize) {
-        await queryInterface.dropTable("Prescription");
+        await queryInterface.dropTable("MedicalStaff");
     },
 };

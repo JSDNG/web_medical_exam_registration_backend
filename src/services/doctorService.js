@@ -26,7 +26,7 @@ const createSchedule = async (rawData) => {
         // Lấy thông tin lịch hiện tại từ cơ sở dữ liệu
         let dataOld = await db.Schedule.findAll({
             where: { doctorId: rawData[0].doctorId, date: rawData[0].date },
-            attributes: ["price", "date", "doctorId", "timeId"],
+            attributes: ["date", "doctorId", "timeId"],
             raw: true,
         });
 
@@ -65,74 +65,9 @@ const createSchedule = async (rawData) => {
 };
 const getAllSchedule = async (id) => {
     try {
-        // Lấy dữ liệu từ cơ sở dữ liệu
-        let data = await db.Schedule.findAll({
-            where: { doctorId: id },
-            attributes: ["id", "price", "date", "doctorId", "timeId"],
-            raw: true,
-            nest: true,
-            order: [["date", "ASC"]],
-        });
-
-        // Kiểm tra nếu data không có giá trị thì trả về mảng rỗng
-        if (!data || data.length === 0) {
-            return {
-                EC: 0,
-                EM: "No schedules found",
-                DT: [],
-            };
-        }
-
-        // Lấy tất cả các timeId cần thiết trong một lần truy vấn
-        const timeIds = data.map((schedule) => schedule.timeId);
-        const times = await db.PeriodOfTime.findAll({
-            where: { id: timeIds },
-            attributes: ["id", "time"],
-            raw: true,
-        });
-
-        // Tạo một map từ timeId đến time để dễ dàng tra cứu
-        const timeMap = times.reduce((acc, time) => {
-            acc[time.id] = time.time;
-            return acc;
-        }, {});
-        //console.log(timeMap);
-        // Thay thế timeId bằng thời gian tương ứng
-        data.forEach((schedule) => {
-            schedule.timeId = { time: timeMap[schedule.timeId] };
-        });
-        //console.log(data);
-        // Nhóm các đối tượng theo ngày
-        const groupedData = data.reduce((acc, schedule) => {
-            const date = schedule.date.toISOString().split("T")[0]; // Lấy ngày (không lấy giờ)
-            if (!acc[date]) {
-                acc[date] = [];
-            }
-            acc[date].push(schedule);
-            return acc;
-        }, {});
-
-        // Chuyển đổi định dạng để trả về
-        const result = Object.keys(groupedData).map((date) => ({
-            date,
-            schedules: groupedData[date],
-        }));
-
-        // Sắp xếp thời gian của lịch trình theo thứ tự tăng dần
-        result.forEach((item) => {
-            item.schedules.sort((a, b) => {
-                // Trích xuất thời gian bắt đầu từ chuỗi thời gian
-                const timeA = a.timeId.time.split(" - ")[0];
-                const timeB = b.timeId.time.split(" - ")[0];
-
-                // Chuyển đổi thời gian sang dạng số để so sánh
-                const [hoursA, minutesA] = timeA.split(":").map(Number);
-                const [hoursB, minutesB] = timeB.split(":").map(Number);
-
-                return hoursA - hoursB || minutesA - minutesB;
-            });
-        });
-
+        let results = await db.Schedule.findAll({ attributes: ["price", "date", "doctorId", "timeId"] });
+        let data = results && results.length > 0 ? results.map((result) => result.get({ plain: true })) : [];
+        console.log(data);
         return {
             EC: 0,
             EM: "Get the schedule list",
@@ -150,32 +85,7 @@ const getAllSchedule = async (id) => {
 
 const deleteSchedule = async (rawData) => {
     try {
-        if (!rawData || rawData.length === 0) {
-            return {
-                EC: 1,
-                EM: "No schedules to delete",
-                DT: "",
-            };
-        }
-
-        if (rawData.length === 1) {
-            let data = await db.Appointment.findOne({
-                where: { scheduleId: rawData[0] },
-            });
-            if (data) {
-                return {
-                    EC: 1,
-                    EM: "Cannot delete schedule",
-                    DT: "",
-                };
-            }else{
-                return {
-                    EC: 0,
-                    EM: "Can delete schedule",
-                    DT: "",
-                };
-            }
-        } else {
+        if (rawData) {
             await db.Schedule.destroy({
                 where: {
                     id: {
@@ -194,7 +104,7 @@ const deleteSchedule = async (rawData) => {
         console.log(err);
         return {
             EC: -1,
-            EM: "Something went wrong in service...",
+            EM: "Something wrongs in service... ",
             DT: "",
         };
     }
@@ -204,4 +114,6 @@ module.exports = {
     createSchedule,
     getAllSchedule,
     deleteSchedule,
+    getAllAppointmentfromOneDoctor,
+    createDoctorSpecialty,
 };

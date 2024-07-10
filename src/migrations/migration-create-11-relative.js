@@ -6,7 +6,7 @@ const { toDefaultValue } = require("sequelize/lib/utils");
 module.exports = {
     async up(queryInterface, Sequelize) {
         await queryInterface.createTable(
-            "Invoice",
+            "Relative",
             {
                 id: {
                     allowNull: false,
@@ -14,17 +14,31 @@ module.exports = {
                     primaryKey: true,
                     type: Sequelize.INTEGER,
                 },
-                totalPrice: {
+                fullName: {
                     type: Sequelize.STRING,
                 },
-                dateCreated: {
+                dateOfBirth: {
                     type: Sequelize.DATE,
                 },
-                doctorId: {
-                    type: Sequelize.INTEGER,
+                gender: {
+                    type: Sequelize.STRING,
                 },
-                recordId: {
+                phone: {
+                    type: Sequelize.STRING,
+                },
+                email: {
+                    type: Sequelize.STRING,
+                },
+                address: {
+                    type: Sequelize.STRING,
+                },
+                patientId: {
                     type: Sequelize.INTEGER,
+                    allowNull: false,
+                    references: {
+                        model: "Patient",
+                        key: "id",
+                    },
                 },
                 createdAt: {
                     allowNull: false,
@@ -42,6 +56,6 @@ module.exports = {
         );
     },
     async down(queryInterface, Sequelize) {
-        await queryInterface.dropTable("Invoice");
+        await queryInterface.dropTable("Relative");
     },
 };

@@ -6,7 +6,7 @@ const { toDefaultValue } = require("sequelize/lib/utils");
 module.exports = {
     async up(queryInterface, Sequelize) {
         await queryInterface.createTable(
-            "MedicalStaff",
+            "Appointment",
             {
                 id: {
                     allowNull: false,
@@ -14,35 +14,39 @@ module.exports = {
                     primaryKey: true,
                     type: Sequelize.INTEGER,
                 },
-                fullName: {
-                    type: Sequelize.STRING,
-                },
-                image: {
-                    type: Sequelize.BLOB,
-                },
-                dateOfBirth: {
-                    type: Sequelize.DATE,
-                },
-                gender: {
-                    type: Sequelize.STRING,
-                },
-                phone: {
-                    type: Sequelize.STRING,
-                },
-                description: {
-                    type: Sequelize.STRING,
-                },
-                address: {
-                    type: Sequelize.STRING,
-                },
-                dateCreated: {
-                    type: Sequelize.STRING,
-                },
-                accountId: {
+                appointmentNumber: {
                     type: Sequelize.INTEGER,
                 },
-                positionId: {
+                statusId: {
                     type: Sequelize.INTEGER,
+                    allowNull: false,
+                    references: {
+                        model: "AllStatus",
+                        key: "id",
+                    },
+                },
+                scheduleId: {
+                    type: Sequelize.INTEGER,
+                    allowNull: false,
+                    references: {
+                        model: "Schedule",
+                        key: "id",
+                    },
+                },
+                patientId: {
+                    type: Sequelize.INTEGER,
+                    allowNull: false,
+                    references: {
+                        model: "Patient",
+                        key: "id",
+                    },
+                },
+                staffId: {
+                    type: Sequelize.INTEGER,
+                    references: {
+                        model: "MedicalStaff",
+                        key: "id",
+                    },
                 },
                 createdAt: {
                     allowNull: false,
@@ -60,6 +64,6 @@ module.exports = {
         );
     },
     async down(queryInterface, Sequelize) {
-        await queryInterface.dropTable("MedicalStaff");
+        await queryInterface.dropTable("Appointment");
     },
 };

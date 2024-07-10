@@ -6,7 +6,7 @@ const { toDefaultValue } = require("sequelize/lib/utils");
 module.exports = {
     async up(queryInterface, Sequelize) {
         await queryInterface.createTable(
-            "MedicalRecord",
+            "Prescription",
             {
                 id: {
                     allowNull: false,
@@ -14,35 +14,33 @@ module.exports = {
                     primaryKey: true,
                     type: Sequelize.INTEGER,
                 },
-                medicalHistory: {
+                medicationName: {
                     type: Sequelize.STRING,
                 },
-                reason: {
+                price: {
                     type: Sequelize.STRING,
                 },
-                diagnosis: {
-                    type: Sequelize.STRING,
-                },
-                treatmentPlan: {
-                    type: Sequelize.STRING,
-                },
-                dateCreated: {
-                    type: Sequelize.DATE,
-                },
-                patientId: {
+                quantity: {
                     type: Sequelize.INTEGER,
+                },
+                instruction: {
+                    type: Sequelize.STRING,
                 },
                 doctorId: {
                     type: Sequelize.INTEGER,
+                    allowNull: false,
+                    references: {
+                        model: "MedicalStaff",
+                        key: "id",
+                    },
                 },
-                statusId: {
+                recordId: {
                     type: Sequelize.INTEGER,
-                },
-                appointmentId: {
-                    type: Sequelize.INTEGER,
-                },
-                specialtyId: {
-                    type: Sequelize.INTEGER,
+                    allowNull: false,
+                    references: {
+                        model: "MedicalRecord",
+                        key: "id",
+                    },
                 },
                 createdAt: {
                     allowNull: false,
@@ -60,6 +58,6 @@ module.exports = {
         );
     },
     async down(queryInterface, Sequelize) {
-        await queryInterface.dropTable("MedicalRecord");
+        await queryInterface.dropTable("Prescription");
     },
 };

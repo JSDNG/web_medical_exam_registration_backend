@@ -14,9 +14,19 @@ module.exports = {
             },
             doctorId: {
                 type: Sequelize.INTEGER,
+                allowNull: false,
+                references: {
+                    model: "MedicalStaff",
+                    key: "id",
+                },
             },
             specialtyId: {
                 type: Sequelize.INTEGER,
+                allowNull: false,
+                references: {
+                    model: "Specialty",
+                    key: "id",
+                },
             },
             createdAt: {
                 allowNull: false,
