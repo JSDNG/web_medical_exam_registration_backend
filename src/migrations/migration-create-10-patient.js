@@ -17,9 +17,6 @@ module.exports = {
                 fullName: {
                     type: Sequelize.STRING,
                 },
-                image: {
-                    type: Sequelize.STRING,
-                },
                 dateOfBirth: {
                     type: Sequelize.DATE,
                 },
@@ -32,11 +29,13 @@ module.exports = {
                 address: {
                     type: Sequelize.STRING,
                 },
-                dateCreated: {
-                    type: Sequelize.DATE,
-                },
                 accountId: {
                     type: Sequelize.INTEGER,
+                    allowNull: false,
+                    references: {
+                        model: "Account",
+                        key: "id",
+                    },
                 },
                 createdAt: {
                     allowNull: false,

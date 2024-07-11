@@ -8,6 +8,7 @@ const {
     putPatientInfoById,
     createNewRelative,
     deleteRelative,
+    getAllRelative,
 } = require("../services/patientService");
 
 const postAppointment = async (req, res) => {
@@ -198,6 +199,23 @@ const putPatientInfo = async (req, res) => {
         });
     }
 };
+
+const getRelative = async (req, res) => {
+    try {
+        let data = await getAllRelative(req.query.id);
+        return res.status(200).json({
+            EC: data.EC,
+            EM: data.EM,
+            DT: data.DT,
+        });
+    } catch (err) {
+        res.status(500).json({
+            EC: -1,
+            EM: "error from server",
+            DT: "",
+        });
+    }
+};
 module.exports = {
     postAppointment,
     getAppointment,
@@ -206,4 +224,5 @@ module.exports = {
     postMedicalRecord,
     putMedicalRecord,
     putPatientInfo,
+    getRelative,
 };

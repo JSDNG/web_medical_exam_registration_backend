@@ -12,6 +12,15 @@ const checkUser = async (id) => {
     }
     return false;
 };
+const checkEmailFromRelative = async (email) => {
+    let relative = await db.Relative.findOne({
+        where: { email: email },
+    });
+    if (relative) {
+        return relative.id;
+    }
+    return false;
+};
 const createAppointment = async (rawData) => {
     try {
         const maxAppointment = await db.Appointment.findOne({
@@ -70,17 +79,61 @@ const createMedicalRecord = async (rawData, appointmentId, relativeId) => {
         };
     }
 };
+const getAllRelative = async (id) => {
+    try {
+        // Lấy dữ liệu từ cơ sở dữ liệu
+        let data = await db.Relative.findAll({
+            where: { patientId: id },
+            attributes: ["id", "fullName", "dateOfBirth", "gender", "phone", "email", "address"],
+            raw: true,
+            nest: true,
+        });
+
+        if (!data || data.length === 0) {
+            return {
+                EC: 0,
+                EM: "No Relatives found",
+                DT: [],
+            };
+        }
+        let modifiedDT = data.map((item) => ({
+            ...item,
+            dateOfBirth: item.dateOfBirth ? new Date(item?.dateOfBirth).toISOString().split("T")[0] : null,
+        }));
+        return {
+            EC: 0,
+            EM: "Get the Relatives list",
+            DT: modifiedDT,
+        };
+    } catch (err) {
+        console.log(err);
+        return {
+            EC: -1,
+            EM: "Something went wrong in service...",
+            DT: "",
+        };
+    }
+};
 const createNewRelative = async (rawData) => {
     try {
-        let data = await db.Relative.create({
+        let data;
+        const relativeData = {
             fullName: rawData.fullName,
-            //dateOfBirth: new Date(rawData.dateOfBirth),
+            dateOfBirth: new Date(rawData.dateOfBirth),
             gender: rawData.gender,
             phone: rawData.phone,
             email: rawData.email,
             address: rawData.address,
             patientId: rawData.patientId,
-        });
+        };
+        let id = await checkEmailFromRelative(rawData.email);
+        if (id) {
+            data = await db.Relative.update(relativeData, {
+                where: { id: id },
+            });
+        } else {
+            data = await db.Relative.create(relativeData);
+        }
         return {
             EC: 0,
             EM: "Relative created successfully",
@@ -276,7 +329,7 @@ const putPatientInfoById = async (rawData) => {
         let user = await db.Patient.update(
             {
                 fullName: rawData.fullName,
-                //dateOfBirth: new Date(rawData.dateOfBirth),
+                dateOfBirth: new Date(rawData.dateOfBirth),
                 gender: rawData.gender,
                 phone: rawData.phone,
                 address: rawData.address,
@@ -304,6 +357,7 @@ module.exports = {
     getAllAppointment,
     deleteAppointment,
     createMedicalRecord,
+    getAllRelative,
     createNewRelative,
     deleteRelative,
     deleteMedicalRecord,
