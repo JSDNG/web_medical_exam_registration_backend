@@ -100,7 +100,6 @@ const logout = async (req, res) => {
 };
 const getAllMedicalStaff = async (req, res) => {
     try {
-        console.log(req.query.medicalstaff);
         if (!req.query.medicalstaff) {
             return res.status(200).json({
                 EC: 1,
@@ -238,3 +237,4 @@ module.exports = {
     putOneMedicalStaff,
     deleteOneMedicalStaff,
 };
+

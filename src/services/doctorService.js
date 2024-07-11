@@ -69,6 +69,13 @@ const getAllSchedule = async (id) => {
         let data = await db.Schedule.findAll({
             where: { doctorId: id },
             attributes: ["id", "date", "doctorId", "timeId"],
+            include: [
+                {
+                    model: db.Appointment,
+                    attributes: ["id"],
+                },
+            ],
+
             raw: true,
             nest: true,
             order: [["date", "ASC"]],
@@ -84,7 +91,7 @@ const getAllSchedule = async (id) => {
         }
 
         // Lấy tất cả các timeId cần thiết trong một lần truy vấn
-        const timeIds = data.map((schedule) => schedule.timeId);
+        const timeIds = [...new Set(data.map((schedule) => schedule.timeId))];
         const times = await db.PeriodOfTime.findAll({
             where: { id: timeIds },
             attributes: ["id", "time"],
@@ -96,12 +103,11 @@ const getAllSchedule = async (id) => {
             acc[time.id] = time.time;
             return acc;
         }, {});
-        //console.log(timeMap);
+
         // Thay thế timeId bằng thời gian tương ứng
         data.forEach((schedule) => {
             schedule.timeId = { time: timeMap[schedule.timeId] };
         });
-        //console.log(data);
         // Nhóm các đối tượng theo ngày
         const groupedData = data.reduce((acc, schedule) => {
             const date = schedule.date.toISOString().split("T")[0]; // Lấy ngày (không lấy giờ)
@@ -132,7 +138,16 @@ const getAllSchedule = async (id) => {
                 return hoursA - hoursB || minutesA - minutesB;
             });
         });
-
+        // Lọc các lịch trình theo điều kiện Appointment
+        result.forEach(entry => {
+            entry.schedules = entry.schedules.filter(schedule => {
+                if (schedule.Appointment && schedule.Appointment.id === null) {
+                    delete schedule.Appointment;
+                    return true;
+                }
+                return !schedule.Appointment || schedule.Appointment.id === null;
+            });
+        });
         return {
             EC: 0,
             EM: "Get the schedule list",
@@ -255,7 +270,7 @@ const getAllAppointmentfromOneDoctor = async (id) => {
             nest: true,
         });
         // Lọc theo id của bác sĩ
-        let result = data.filter((item) => item.Schedule.MedicalStaff.id === +id && item.AllStatus.id === 2);
+        let result = data.filter((item) => item.Schedule.MedicalStaff.id === +id && item.AllStatus.id === 1);
 
         // Kiểm tra nếu data không có giá trị thì trả về mảng rỗng
         if (!data || data.length === 0 || result.length === 0) {
@@ -295,13 +310,17 @@ const getAllAppointmentfromOneDoctor = async (id) => {
             return {
                 date: item.date,
                 data: item.data.map((item) => {
+                    let patientInfo =
+                        item.MedicalRecords.Relative.id !== null
+                            ? item.MedicalRecords.Relative
+                            : item.MedicalRecords.Patient;
                     let items = {
                         id: item.id,
                         appointmentNumber: item.appointmentNumber,
                         statusAp: item.AllStatus.statusName,
                         price: item.Schedule.MedicalStaff.price,
                         time: item.Schedule.PeriodOfTime.time,
-                        MedicalRecords: {
+                        MedicalRecord: {
                             id: item.MedicalRecords.id,
                             medicalHistory: item.MedicalRecords.medicalHistory,
                             reason: item.MedicalRecords.reason,
@@ -309,10 +328,17 @@ const getAllAppointmentfromOneDoctor = async (id) => {
                             statusMR: item.MedicalRecords.AllStatus.statusName,
                             specialtyMR: item.MedicalRecords.Specialty.specialtyName,
                         },
-                        Patient:
-                            item.MedicalRecords.Relative.id !== null
-                                ? item.MedicalRecords.Relative
-                                : item.MedicalRecords.Patient,
+                        Patient: {
+                            id: patientInfo.id,
+                            fullName: patientInfo.fullName,
+                            dateOfBirth: patientInfo.dateOfBirth
+                                ? patientInfo.dateOfBirth.toISOString().split("T")[0]
+                                : null,
+                            gender: patientInfo.gender,
+                            phone: patientInfo.phone,
+                            email: patientInfo.email || patientInfo.Account?.email,
+                            address: patientInfo.address,
+                        },
                     };
                     return items;
                 }),

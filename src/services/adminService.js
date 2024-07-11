@@ -101,11 +101,15 @@ const loginAccount = async (rawData) => {
                         attributes: ["id", "positionName"],
                     },
                 ],
+                raw: true,
+                nest: true,
             });
         } else if (account.accountType === "Patient") {
             userPromise = db.Patient.findOne({
                 where: { accountId: account.id },
                 attributes: ["id", "fullName", "dateOfBirth", "gender", "phone", "address"],
+                raw: true,
+                nest: true,
             });
         }
 
@@ -119,7 +123,9 @@ const loginAccount = async (rawData) => {
         if (user.image) {
             user.image = Buffer.from(user.image, "binary").toString("base64");
         }
-
+        if(user.dateOfBirth){
+            user.dateOfBirth = new Date(user.dateOfBirth).toISOString().split('T')[0];
+        }
         if (user.Specialties && user.Specialties.length > 0) {
             user.Specialties.forEach((item) => {
                 if (item.image) {
@@ -255,6 +261,10 @@ const getMedicalStaff = async (rawData) => {
                     include: { model: db.Role, attributes: ["id", "roleName"] },
                 },
             ],
+            // raw: true,
+            // nest: true,
+            // group: ["MedicalStaff.id"],
+
         });
 
         if (!list || list.length === 0) {
@@ -282,6 +292,11 @@ const getMedicalStaff = async (rawData) => {
             return true;
         });
 
+        // let resultList = filteredList.map((item) => ({
+        //     dateOfBirth: item.dateOfBirth !== null ? new Date(item?.dateOfBirth).toISOString().split("T")[0] : null,
+        // }));
+        //console.log(resultList);
+        //console.log(list);
         return { EC: 0, EM: "Get list doctor", DT: filteredList };
     } catch (err) {
         console.error(err);
@@ -364,7 +379,7 @@ const putMedicalStaffById = async (rawData) => {
             {
                 fullName: rawData.fullName,
                 image: rawData.image,
-                //dateOfBirth: new Date(rawData.dateOfBirth),
+                dateOfBirth: new Date(rawData.dateOfBirth),
                 gender: rawData.gender,
                 phone: rawData.phone,
                 description: rawData.description,
