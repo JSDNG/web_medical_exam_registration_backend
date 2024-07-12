@@ -65,9 +65,10 @@ const createSchedule = async (rawData) => {
 };
 const getAllSchedule = async (id) => {
     try {
+        const whereCondition = id ? { doctorId: id } : {};
         // Lấy dữ liệu từ cơ sở dữ liệu
         let data = await db.Schedule.findAll({
-            where: { doctorId: id },
+            where: whereCondition,
             attributes: ["id", "date", "doctorId", "timeId"],
             include: [
                 {
@@ -104,16 +105,14 @@ const getAllSchedule = async (id) => {
             return acc;
         }, {});
 
-        // Thay thế timeId bằng thời gian tương ứng
-        data.forEach((schedule) => {
-            schedule.timeId = { time: timeMap[schedule.timeId] };
-        });
-        // Nhóm các đối tượng theo ngày
+        // Nhóm các đối tượng theo ngày và thay thế timeId bằng thời gian tương ứng
         const groupedData = data.reduce((acc, schedule) => {
             const date = schedule.date.toISOString().split("T")[0]; // Lấy ngày (không lấy giờ)
             if (!acc[date]) {
                 acc[date] = [];
             }
+            schedule.timeId = { time: timeMap[schedule.timeId] };
+            schedule.date = schedule.date.toISOString().split("T")[0];
             acc[date].push(schedule);
             return acc;
         }, {});
@@ -136,16 +135,6 @@ const getAllSchedule = async (id) => {
                 const [hoursB, minutesB] = timeB.split(":").map(Number);
 
                 return hoursA - hoursB || minutesA - minutesB;
-            });
-        });
-        // Lọc các lịch trình theo điều kiện Appointment
-        result.forEach(entry => {
-            entry.schedules = entry.schedules.filter(schedule => {
-                if (schedule.Appointment && schedule.Appointment.id === null) {
-                    delete schedule.Appointment;
-                    return true;
-                }
-                return !schedule.Appointment || schedule.Appointment.id === null;
             });
         });
         return {
@@ -270,7 +259,7 @@ const getAllAppointmentfromOneDoctor = async (id) => {
             nest: true,
         });
         // Lọc theo id của bác sĩ
-        let result = data.filter((item) => item.Schedule.MedicalStaff.id === +id && item.AllStatus.id === 1);
+        let result = data.filter((item) => item.Schedule.MedicalStaff.id === +id && item.AllStatus.id === 2);
 
         // Kiểm tra nếu data không có giá trị thì trả về mảng rỗng
         if (!data || data.length === 0 || result.length === 0) {
