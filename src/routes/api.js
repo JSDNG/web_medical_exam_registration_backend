@@ -26,6 +26,7 @@ const {
     getAppointment,
     getRelative,
     quickCheckUp,
+    getAllDoctorfromSpecialty,
 } = require("../controllers/patientController");
 
 const { putAppointment } = require("../controllers/staffController");
@@ -70,6 +71,7 @@ const initAPIRoutes = (app) => {
 
     router.get("/relative/all", getRelative);
 
+    router.get("/all-doctor/specialty-by-id", getAllDoctorfromSpecialty);
     return app.use("/api/v1/", router);
 };
 

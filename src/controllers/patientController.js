@@ -12,6 +12,8 @@ const {
     getAllRelative,
     findSchedudeForPatient,
     getOnePatient,
+    getOneRelative,
+    getAllDoctorfromSpecialtyById,
 } = require("../services/patientService");
 
 const postAppointment = async (req, res) => {
@@ -37,7 +39,7 @@ const postAppointment = async (req, res) => {
                     DT: "",
                 });
             }
-            relativeId = relativeInfo.DT ? relativeInfo.DT.toString() : null;
+            relativeId = relativeInfo.DT;
         }
 
         const appointmentInfo = await createAppointment(appointment);
@@ -50,11 +52,11 @@ const postAppointment = async (req, res) => {
             });
         }
 
-        appointmentId = appointmentInfo.DT.id ? appointmentInfo.DT.id.toString() : null;
+        appointmentId = appointmentInfo.DT.id;
 
         const data = await createMedicalRecord(medicalRecord, appointmentId, relativeId);
         if (data.EC !== 0) {
-            await deleteAppointment(appointmentId);
+            if (appointmentId) await deleteAppointment(appointmentId);
             if (relativeId) await deleteRelative(relativeId);
             return res.status(400).json({
                 EC: data.EC,
@@ -69,7 +71,7 @@ const postAppointment = async (req, res) => {
         });
     } catch (err) {
         console.error(err);
-
+        if (data && data.DT.id) await deleteMedicalRecord(data.DT.id);
         if (appointmentId) await deleteAppointment(appointmentId);
         if (relativeId) await deleteRelative(relativeId);
 
@@ -222,11 +224,11 @@ const getRelative = async (req, res) => {
 
 const quickCheckUp = async (req, res) => {
     let appointmentId = null;
+    let relativeId = null;
     try {
-        const { medicalRecord, dateQuickCheckUp, patient } = req.body;
-
+        const { medicalRecord, dateQuickCheckUp, relative } = req.body;
         // Input validation
-        if (!medicalRecord || !dateQuickCheckUp || !patient) {
+        if (!medicalRecord || !dateQuickCheckUp) {
             return res.status(400).json({
                 EC: 1,
                 EM: "Missing required parameters",
@@ -236,7 +238,7 @@ const quickCheckUp = async (req, res) => {
 
         // Find schedule for patient
         const schedule = await findSchedudeForPatient(dateQuickCheckUp);
-        if (schedule.EC !== 0 || schedule.DT.id === undefined) {
+        if (schedule.EC !== 0 || schedule.DT.length === 0) {
             return res.status(400).json({
                 EC: schedule.EC,
                 EM: schedule.EM,
@@ -247,7 +249,7 @@ const quickCheckUp = async (req, res) => {
         const appointmentInfo = await createAppointment({
             statusId: 2,
             scheduleId: schedule.DT.id,
-            patientId: patient.id,
+            patientId: medicalRecord?.patientId,
         });
         if (appointmentInfo.EC !== 0) {
             return res.status(400).json({
@@ -257,12 +259,31 @@ const quickCheckUp = async (req, res) => {
             });
         }
 
+        if (relative) {
+            const relativeInfo = await createNewRelative(relative);
+            if (relativeInfo.EC !== 0) {
+                if (appointmentId) await deleteAppointment(appointmentId);
+                return res.status(400).json({
+                    EC: relativeInfo.EC,
+                    EM: relativeInfo.EM,
+                    DT: "",
+                });
+            }
+            relativeId = relativeInfo.DT;
+        }
+        let medicalRecordData = {
+            medicalHistory: medicalRecord?.medicalHistory,
+            reason: medicalRecord?.reason,
+            doctorId: schedule.DT.doctorId,
+            patientId: medicalRecord?.patientId,
+            specialtyId: medicalRecord?.specialtyId,
+        };
         // Create medical record
-        appointmentId = appointmentInfo.DT.id.toString();
-        const medicalRecordInfo = await createMedicalRecord(medicalRecord, appointmentId);
-        await putPatientInfoById(patient);
+        appointmentId = appointmentInfo.DT.id;
+        const medicalRecordInfo = await createMedicalRecord(medicalRecordData, appointmentId, relativeId);
         if (medicalRecordInfo.EC !== 0) {
-            await deleteAppointment(appointmentId);
+            if (appointmentId) await deleteAppointment(appointmentId);
+            if (relativeId) await deleteRelative(relativeId);
             return res.status(400).json({
                 EC: medicalRecordInfo.EC,
                 EM: medicalRecordInfo.EM,
@@ -273,8 +294,12 @@ const quickCheckUp = async (req, res) => {
         // Fetch additional info
         let doctorInfo = await getMedicalStaffById(schedule.DT.doctorId);
         let specialtyInfo = await getOneSpecialty(medicalRecordInfo.DT.specialtyId);
-        let patientInfo = await getOnePatient(medicalRecordInfo.DT.patientId);
-
+        let patientInfo;
+        if (relative) {
+            patientInfo = await getOneRelative(relativeId);
+        } else {
+            patientInfo = await getOnePatient(medicalRecordInfo.DT.patientId);
+        }
         // Prepare response
         let result = {
             appointmentInfo: appointmentInfo.DT,
@@ -295,6 +320,7 @@ const quickCheckUp = async (req, res) => {
         // Handle errors and rollback if necessary
         if (medicalRecordInfo && medicalRecordInfo.DT.id) await deleteMedicalRecord(medicalRecordInfo.DT.id);
         if (appointmentId) await deleteAppointment(appointmentId);
+        if (relativeId) await deleteRelative(relativeId);
 
         return res.status(500).json({
             EC: -1,
@@ -303,7 +329,22 @@ const quickCheckUp = async (req, res) => {
         });
     }
 };
-
+const getAllDoctorfromSpecialty = async (req, res) => {
+    try {
+        let data = await getAllDoctorfromSpecialtyById(req.query.id);
+        return res.status(200).json({
+            EC: data.EC,
+            EM: data.EM,
+            DT: data.DT,
+        });
+    } catch (err) {
+        res.status(500).json({
+            EC: -1,
+            EM: "error from server",
+            DT: "",
+        });
+    }
+};
 module.exports = {
     postAppointment,
     getAppointment,
@@ -314,4 +355,5 @@ module.exports = {
     putPatientInfo,
     getRelative,
     quickCheckUp,
+    getAllDoctorfromSpecialty,
 };

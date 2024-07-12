@@ -66,6 +66,8 @@ const createMedicalRecord = async (rawData, appointmentId, relativeId) => {
             appointmentId: appointmentId,
             specialtyId: rawData.specialtyId,
         });
+        data = data.get({ plain: true });
+        data.dateCreated = data.dateCreated ? data.dateCreated.toISOString().split("T")[0] : null;
         return {
             EC: 0,
             EM: "Medical Record created successfully",
@@ -117,7 +119,6 @@ const getAllRelative = async (id) => {
 };
 const createNewRelative = async (rawData) => {
     try {
-        let data;
         const relativeData = {
             fullName: rawData.fullName,
             dateOfBirth: new Date(rawData.dateOfBirth),
@@ -129,17 +130,22 @@ const createNewRelative = async (rawData) => {
         };
         let id = await checkEmailFromRelative(rawData.email);
         if (id) {
-            data = await db.Relative.update(relativeData, {
+            let data = await db.Relative.update(relativeData, {
                 where: { id: id },
             });
+            return {
+                EC: 0,
+                EM: "Relative updated successfully",
+                DT: data,
+            };
         } else {
-            data = await db.Relative.create(relativeData);
+            let data = await db.Relative.create(relativeData);
+            return {
+                EC: 0,
+                EM: "Relative created successfully",
+                DT: data.id,
+            };
         }
-        return {
-            EC: 0,
-            EM: "Relative created successfully",
-            DT: data.id,
-        };
     } catch (err) {
         console.log(err);
         return {
@@ -369,7 +375,9 @@ const findSchedudeForPatient = async (date) => {
             });
         });
         const result = data.DT.filter((item) => item.schedules.length > 0 && item.date === datePart);
-
+        if (result.length === 0) {
+            return { EC: 1, EM: "No schedules found", DT: result };
+        }
         const convertToSeconds = (time) => {
             const [hours, minutes] = time.split(":").map(Number);
             return hours * 3600 + minutes * 60;
@@ -391,7 +399,7 @@ const findSchedudeForPatient = async (date) => {
         });
 
         if (closestSchedules.length === 0) {
-            return { EC: 0, EM: "No schedules found", DT: [] };
+            return { EC: 0, EM: "No schedules found", DT: closestSchedules };
         }
         // Chỉ lấy các phần tử có thời gian liên tiếp giống nhau
         let results = [closestSchedules[0]];
@@ -451,9 +459,96 @@ const getOnePatient = async (id) => {
             raw: true,
             nest: true,
         });
+        result.dateOfBirth = result.dateOfBirth ? result.dateOfBirth.toISOString().split("T")[0] : null;
+        result.email = result.Account.email;
+
+        // Xóa thuộc tính Account không cần thiết
+        delete result.Account;
         return {
             EC: 0,
-            EM: "Get the specialty list",
+            EM: "Get the patient",
+            DT: result,
+        };
+    } catch (err) {
+        console.log(err);
+        return {
+            EC: -1,
+            EM: "Something wrongs in service... ",
+            DT: "",
+        };
+    }
+};
+const getOneRelative = async (id) => {
+    try {
+        let result = await db.Relative.findOne({
+            where: { id: id },
+            attributes: ["id", "fullName", "dateOfBirth", "gender", "phone", "address", "email"],
+            raw: true,
+            nest: true,
+        });
+        result.dateOfBirth = result.dateOfBirth ? result.dateOfBirth.toISOString().split("T")[0] : null;
+        return {
+            EC: 0,
+            EM: "Get the relative",
+            DT: result,
+        };
+    } catch (err) {
+        console.log(err);
+        return {
+            EC: -1,
+            EM: "Something wrongs in service... ",
+            DT: "",
+        };
+    }
+};
+
+const getAllDoctorfromSpecialtyById = async (id) => {
+    try {
+        let result = await db.Specialty.findOne({
+            where: { id: id },
+            attributes: ["id", "specialtyName", "description", "image"],
+            include: [
+                {
+                    model: db.MedicalStaff,
+                    attributes: [
+                        "id",
+                        "fullName",
+                        "image",
+                        "dateOfBirth",
+                        "gender",
+                        "phone",
+                        "description",
+                        "price",
+                        "address",
+                    ],
+                    through: { attributes: [] },
+                    include: [
+                        {
+                            model: db.Position,
+                            attributes: ["id", "positionName"],
+                        },
+                    ],
+                },
+            ],
+        });
+
+        if (result.image) {
+            result.image = Buffer.from(result.image, "binary").toString("base64");
+        }
+
+        result = result.get({ plain: true });
+
+        if (result.MedicalStaffs && result.MedicalStaffs.length > 0) {
+            result.MedicalStaffs.forEach((item) => {
+                item.dateOfBirth = item.dateOfBirth ? item.dateOfBirth.toISOString().split("T")[0] : null;
+                if (item.image) {
+                    item.image = Buffer.from(item.image, "binary").toString("base64");
+                }
+            });
+        }
+        return {
+            EC: 0,
+            EM: "Get All doctor from specialty",
             DT: result,
         };
     } catch (err) {
@@ -478,4 +573,6 @@ module.exports = {
     putPatientInfoById,
     findSchedudeForPatient,
     getOnePatient,
+    getOneRelative,
+    getAllDoctorfromSpecialtyById,
 };
