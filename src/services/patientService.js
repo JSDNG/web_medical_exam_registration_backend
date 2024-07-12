@@ -3,6 +3,7 @@ const _ = require("lodash");
 const { reduce } = require("lodash");
 const { Op } = require("sequelize");
 const Sequelize = require("sequelize");
+const { getAllSchedule } = require("./doctorService");
 const checkUser = async (id) => {
     let userId = await db.Patient.findOne({
         where: { id: id },
@@ -41,7 +42,7 @@ const createAppointment = async (rawData) => {
         return {
             EC: 0,
             EM: "Appointment created successfully",
-            DT: data.id,
+            DT: data,
         };
     } catch (err) {
         console.error("Error:", err);
@@ -341,7 +342,119 @@ const putPatientInfoById = async (rawData) => {
         return {
             EC: 0,
             EM: "Patient updated successfully",
+            DT: user,
+        };
+    } catch (err) {
+        console.log(err);
+        return {
+            EC: -1,
+            EM: "Something wrongs in service... ",
             DT: "",
+        };
+    }
+};
+const findSchedudeForPatient = async (date) => {
+    try {
+        const [datePart, timePart] = date.split(" ");
+        let data = await getAllSchedule();
+
+        // Lọc các lịch trình theo điều kiện Appointment
+        data.DT.forEach((entry) => {
+            entry.schedules = entry.schedules.filter((schedule) => {
+                if (schedule.Appointment && schedule.Appointment.id === null) {
+                    delete schedule.Appointment;
+                    return true;
+                }
+                return !schedule.Appointment || schedule.Appointment.id === null;
+            });
+        });
+        const result = data.DT.filter((item) => item.schedules.length > 0 && item.date === datePart);
+
+        const convertToSeconds = (time) => {
+            const [hours, minutes] = time.split(":").map(Number);
+            return hours * 3600 + minutes * 60;
+        };
+
+        const timeASeconds = convertToSeconds(timePart);
+
+        let closestSchedules = [];
+
+        result.forEach((item) => {
+            item.schedules.forEach((schedule) => {
+                const scheduleTime = schedule.timeId.time.split(" - ")[0];
+                const scheduleSeconds = convertToSeconds(scheduleTime);
+                const difference = scheduleSeconds - timeASeconds;
+                if (difference > 0) {
+                    closestSchedules.push(schedule);
+                }
+            });
+        });
+
+        if (closestSchedules.length === 0) {
+            return { EC: 0, EM: "No schedules found", DT: [] };
+        }
+        // Chỉ lấy các phần tử có thời gian liên tiếp giống nhau
+        let results = [closestSchedules[0]];
+
+        for (let i = 1; i < closestSchedules.length; i++) {
+            if (closestSchedules[i].timeId.time === closestSchedules[i - 1].timeId.time) {
+                results.push(closestSchedules[i]);
+            } else {
+                break;
+            }
+        }
+        let maxItems = [];
+        let maxCount = 0;
+
+        for (const item of results) {
+            let { count } = await db.MedicalRecord.findAndCountAll({
+                where: {
+                    doctorId: item.doctorId,
+                    statusId: 3,
+                },
+            });
+
+            if (count > maxCount) {
+                maxCount = count;
+                maxItems = [item];
+            } else if (count === maxCount) {
+                maxItems.push(item);
+                break;
+            }
+        }
+
+        return {
+            EC: 0,
+            EM: "Found schedules successfully",
+            DT: maxItems[0],
+        };
+    } catch (err) {
+        console.error(err);
+        return {
+            EC: -1,
+            EM: "Something went wrong in service",
+            DT: "",
+        };
+    }
+};
+const getOnePatient = async (id) => {
+    try {
+        let result = await db.Patient.findOne({
+            where: { id: id },
+            attributes: ["id", "fullName", "dateOfBirth", "gender", "phone", "address"],
+            include: [
+                {
+                    model: db.Account,
+                    attributes: ["id", "email"],
+                },
+            ],
+            raw: true,
+            nest: true,
+        });
+        return {
+            EC: 0,
+            EM: "Get the specialty list",
+            DT: result,
         };
     } catch (err) {
         console.log(err);
@@ -363,4 +476,6 @@ module.exports = {
     deleteMedicalRecord,
     putMedicalRecordById,
     putPatientInfoById,
+    findSchedudeForPatient,
+    getOnePatient,
 };

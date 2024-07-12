@@ -123,8 +123,8 @@ const loginAccount = async (rawData) => {
         if (user.image) {
             user.image = Buffer.from(user.image, "binary").toString("base64");
         }
-        if(user.dateOfBirth){
-            user.dateOfBirth = new Date(user.dateOfBirth).toISOString().split('T')[0];
+        if (user.dateOfBirth) {
+            user.dateOfBirth = new Date(user.dateOfBirth).toISOString().split("T")[0];
         }
         if (user.Specialties && user.Specialties.length > 0) {
             user.Specialties.forEach((item) => {
@@ -228,6 +228,28 @@ const getSpecialty = async () => {
         };
     }
 };
+const getOneSpecialty = async (id) => {
+    try {
+        let result = await db.Specialty.findOne({
+            where: { id: id },
+            attributes: ["id", "specialtyName"],
+            raw: true,
+            nest: true,
+        });
+        return {
+            EC: 0,
+            EM: "Get the specialty",
+            DT: result,
+        };
+    } catch (err) {
+        console.log(err);
+        return {
+            EC: -1,
+            EM: "Something wrongs in service... ",
+            DT: "",
+        };
+    }
+};
 const getMedicalStaff = async (rawData) => {
     try {
         if (rawData !== "bac-si" && rawData !== "nhan-vien") {
@@ -281,13 +303,13 @@ const getMedicalStaff = async (rawData) => {
             if (item.image) {
                 item.image = Buffer.from(item.image, "binary").toString("base64");
             }
-            // if (item.Specialties) {
-            //     item.Specialties.forEach((specialty) => {
-            //         if (specialty.image) {
-            //             specialty.image = Buffer.from(specialty.image, "binary").toString("base64");
-            //         }
-            //     });
-            // }
+            if (item.Specialties) {
+                item.Specialties.forEach((specialty) => {
+                    if (specialty.image) {
+                        specialty.image = Buffer.from(specialty.image, "binary").toString("base64");
+                    }
+                });
+            }
             return true;
         });
 
@@ -459,6 +481,7 @@ module.exports = {
     createNewUser,
     getTime,
     getSpecialty,
+    getOneSpecialty,
     getMedicalStaff,
     getMedicalStaffById,
     putMedicalStaffById,

@@ -1,3 +1,4 @@
+const { getMedicalStaffById, getOneSpecialty } = require("../services/adminService");
 const {
     getAllAppointment,
     createAppointment,
@@ -9,6 +10,8 @@ const {
     createNewRelative,
     deleteRelative,
     getAllRelative,
+    findSchedudeForPatient,
+    getOnePatient,
 } = require("../services/patientService");
 
 const postAppointment = async (req, res) => {
@@ -47,7 +50,7 @@ const postAppointment = async (req, res) => {
             });
         }
 
-        appointmentId = appointmentInfo.DT ? appointmentInfo.DT.toString() : null;
+        appointmentId = appointmentInfo.DT.id ? appointmentInfo.DT.id.toString() : null;
 
         const data = await createMedicalRecord(medicalRecord, appointmentId, relativeId);
         if (data.EC !== 0) {
@@ -216,6 +219,91 @@ const getRelative = async (req, res) => {
         });
     }
 };
+
+const quickCheckUp = async (req, res) => {
+    let appointmentId = null;
+    try {
+        const { medicalRecord, dateQuickCheckUp, patient } = req.body;
+
+        // Input validation
+        if (!medicalRecord || !dateQuickCheckUp || !patient) {
+            return res.status(400).json({
+                EC: 1,
+                EM: "Missing required parameters",
+                DT: "",
+            });
+        }
+
+        // Find schedule for patient
+        const schedule = await findSchedudeForPatient(dateQuickCheckUp);
+        if (schedule.EC !== 0 || schedule.DT.id === undefined) {
+            return res.status(400).json({
+                EC: schedule.EC,
+                EM: schedule.EM,
+                DT: "",
+            });
+        }
+        // Create appointment
+        const appointmentInfo = await createAppointment({
+            statusId: 2,
+            scheduleId: schedule.DT.id,
+            patientId: patient.id,
+        });
+        if (appointmentInfo.EC !== 0) {
+            return res.status(400).json({
+                EC: appointmentInfo.EC,
+                EM: appointmentInfo.EM,
+                DT: "",
+            });
+        }
+
+        // Create medical record
+        appointmentId = appointmentInfo.DT.id.toString();
+        const medicalRecordInfo = await createMedicalRecord(medicalRecord, appointmentId);
+        await putPatientInfoById(patient);
+        if (medicalRecordInfo.EC !== 0) {
+            await deleteAppointment(appointmentId);
+            return res.status(400).json({
+                EC: medicalRecordInfo.EC,
+                EM: medicalRecordInfo.EM,
+                DT: "",
+            });
+        }
+
+        // Fetch additional info
+        let doctorInfo = await getMedicalStaffById(schedule.DT.doctorId);
+        let specialtyInfo = await getOneSpecialty(medicalRecordInfo.DT.specialtyId);
+        let patientInfo = await getOnePatient(medicalRecordInfo.DT.patientId);
+
+        // Prepare response
+        let result = {
+            appointmentInfo: appointmentInfo.DT,
+            medicalRecordInfo: medicalRecordInfo.DT,
+            doctorInfo: doctorInfo.DT,
+            specialtyInfo: specialtyInfo.DT,
+            patientInfo: patientInfo.DT,
+        };
+
+        // Send success response
+        return res.status(200).json({
+            EC: 0,
+            EM: "Tạo lịch khám thành công",
+            DT: result,
+        });
+    } catch (err) {
+        console.error(err);
+        // Handle errors and rollback if necessary
+        if (medicalRecordInfo && medicalRecordInfo.DT.id) await deleteMedicalRecord(medicalRecordInfo.DT.id);
+        if (appointmentId) await deleteAppointment(appointmentId);
+
+        return res.status(500).json({
+            EC: -1,
+            EM: "Error from server",
+            DT: "",
+        });
+    }
+};
+
 module.exports = {
     postAppointment,
     getAppointment,
@@ -225,4 +313,5 @@ module.exports = {
     putMedicalRecord,
     putPatientInfo,
     getRelative,
+    quickCheckUp,
 };

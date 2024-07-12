@@ -25,6 +25,7 @@ const {
     putPatientInfo,
     getAppointment,
     getRelative,
+    quickCheckUp,
 } = require("../controllers/patientController");
 
 const { putAppointment } = require("../controllers/staffController");
@@ -64,6 +65,8 @@ const initAPIRoutes = (app) => {
     router.delete("/patient/medical-record/:id", deleteMedicalRecordById);
 
     router.put("/patient/information", putPatientInfo);
+
+    router.post("/patient/quick-check-up", quickCheckUp);
 
     router.get("/relative/all", getRelative);
 
