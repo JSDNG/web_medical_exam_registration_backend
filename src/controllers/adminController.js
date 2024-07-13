@@ -154,11 +154,11 @@ const getAllSpecialty = async (req, res) => {
     }
 };
 const getOneMedicalStaff = async (req, res) => {
-    try {  
+    try {
         let data = await getMedicalStaffById(req.params.id);
         return res.status(200).json({
             EC: data.EC,
-            EM: data.EM, 
+            EM: data.EM,
             DT: data.DT,
         });
     } catch (err) {
@@ -177,18 +177,18 @@ const putOneMedicalStaff = async (req, res) => {
                 EM: "missing required params",
                 DT: "",
             });
-        } else {
-            if (req.body.specialty.length > 0) {
-                await createDoctorSpecialty(req.body.specialty, req.body.id);
-            }
-            let data = await putMedicalStaffById(req.body);
-            return res.status(200).json({
-                EC: data.EC,
-                EM: data.EM,
-                DT: data.DT,
-            });
         }
+        if (req.body?.specialty?.length > 0) {
+            await createDoctorSpecialty(req.body.specialty, req.body.id);
+        }
+        let data = await putMedicalStaffById(req.body);
+        return res.status(200).json({
+            EC: data.EC,
+            EM: data.EM,
+            DT: data.DT,
+        });
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
@@ -237,4 +237,3 @@ module.exports = {
     putOneMedicalStaff,
     deleteOneMedicalStaff,
 };
-

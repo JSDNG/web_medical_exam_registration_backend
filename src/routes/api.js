@@ -3,7 +3,7 @@ const {
     getSchedule,
     postSchedule,
     deleteScheduleById,
-    getAllAppointment,
+    getAllAppointmentDoctor,
     examiningDoctor,
 } = require("../controllers/doctorController");
 const {
@@ -26,9 +26,14 @@ const {
     getAppointment,
     getRelative,
     quickCheckUp,
+    getAllDoctorfromSpecialty,
 } = require("../controllers/patientController");
 
-const { putAppointment } = require("../controllers/staffController");
+const {
+    putAppointment,
+    getAllAppointment,
+    deleteAppointmentAndMedicalRecord,
+} = require("../controllers/staffController");
 const { create } = require("lodash");
 const router = express.Router();
 
@@ -51,14 +56,15 @@ const initAPIRoutes = (app) => {
     router.get("/doctor/:id/schedule/all", getSchedule);
     router.post("/doctor/schedule", postSchedule);
     router.delete("/doctor/schedule/:id", deleteScheduleById);
-    router.get("/doctor/appointment-from-doctor/all", getAllAppointment);
+    router.get("/doctor/appointment-from-one-doctor/all", getAllAppointmentDoctor);
     router.put("/doctor/examining-doctor", examiningDoctor);
     // Staff
     router.put("/staff/appointment", putAppointment);
-
+    router.get("/staff/appointment/all", getAllAppointment);
+    router.delete("/staff/delete/medical-record/appointment", deleteAppointmentAndMedicalRecord);
     // Patient
     router.post("/patient/appointment", postAppointment);
-    router.get("/patient/:id/appointment/all", getAppointment);
+    //router.get("/patient/:id/appointment/all", getAppointment);
     router.delete("/patient/appointment/:id", deleteAppointmentById);
 
     router.put("/patient/medical-record", putMedicalRecord);
@@ -70,6 +76,7 @@ const initAPIRoutes = (app) => {
 
     router.get("/relative/all", getRelative);
 
+    router.get("/all-doctor/specialty-by-id", getAllDoctorfromSpecialty);
     return app.use("/api/v1/", router);
 };
 

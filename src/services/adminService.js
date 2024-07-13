@@ -73,7 +73,7 @@ const loginAccount = async (rawData) => {
             };
         }
 
-        const rolePromise = db.Role.findOne({ where: { id: account.roleId } });
+        const rolePromise = db.Role.findOne({ where: { id: account.roleId }, raw: true, nest: true });
 
         let userPromise;
         if (account.accountType === "MedicalStaff") {
@@ -101,8 +101,6 @@ const loginAccount = async (rawData) => {
                         attributes: ["id", "positionName"],
                     },
                 ],
-                raw: true,
-                nest: true,
             });
         } else if (account.accountType === "Patient") {
             userPromise = db.Patient.findOne({
@@ -113,19 +111,27 @@ const loginAccount = async (rawData) => {
             });
         }
 
-        const [role, user] = await Promise.all([rolePromise, userPromise]);
+        let [role, user] = await Promise.all([rolePromise, userPromise]);
 
         let payload = {
             email: account.email,
             role: role.roleName,
         };
         let token = createJWT(payload);
+
+        if (role.roleName !== "Bệnh nhân") {
+            user = user.get({ plain: true });
+        }
+
         if (user.image) {
             user.image = Buffer.from(user.image, "binary").toString("base64");
         }
-        if (user.dateOfBirth) {
-            user.dateOfBirth = new Date(user.dateOfBirth).toISOString().split("T")[0];
-        }
+        const formattedAmount = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
+            user?.price
+        );
+        user.price = user?.price ? formattedAmount : null;
+        user.dateOfBirth = user.dateOfBirth ? user.dateOfBirth.toISOString().split("T")[0] : null;
+
         if (user.Specialties && user.Specialties.length > 0) {
             user.Specialties.forEach((item) => {
                 if (item.image) {
@@ -255,7 +261,7 @@ const getMedicalStaff = async (rawData) => {
         if (rawData !== "bac-si" && rawData !== "nhan-vien") {
             return { EC: 0, EM: "Not found Medical Staff", DT: [] };
         }
-        const list = await db.MedicalStaff.findAll({
+        const results = await db.MedicalStaff.findAll({
             attributes: [
                 "id",
                 "fullName",
@@ -287,12 +293,12 @@ const getMedicalStaff = async (rawData) => {
             // nest: true,
             // group: ["MedicalStaff.id"],
         });
-
-        if (!list || list.length === 0) {
+        let data = results && results.length > 0 ? results.map((result) => result.get({ plain: true })) : [];
+        if (!data || data.length === 0) {
             return { EC: 0, EM: "No doctor found", DT: [] };
         }
 
-        const filteredList = list.filter((item) => {
+        const filteredList = data.filter((item) => {
             const roleName = item?.Account?.Role?.roleName;
             if (
                 (rawData === "bac-si" && (roleName === "Nhân viên" || roleName === "Quản trị viên")) ||
@@ -303,6 +309,12 @@ const getMedicalStaff = async (rawData) => {
             if (item.image) {
                 item.image = Buffer.from(item.image, "binary").toString("base64");
             }
+            const formattedAmount = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
+                item?.price
+            );
+            item.price = item?.price ? formattedAmount : null;
+            item.dateOfBirth = item.dateOfBirth ? item.dateOfBirth.toISOString().split("T")[0] : null;
+
             if (item.Specialties) {
                 item.Specialties.forEach((specialty) => {
                     if (specialty.image) {
@@ -313,12 +325,7 @@ const getMedicalStaff = async (rawData) => {
             return true;
         });
 
-        // let resultList = filteredList.map((item) => ({
-        //     dateOfBirth: item.dateOfBirth !== null ? new Date(item?.dateOfBirth).toISOString().split("T")[0] : null,
-        // }));
-        //console.log(resultList);
-        //console.log(list);
-        return { EC: 0, EM: "Get list doctor", DT: filteredList };
+        return { EC: 0, EM: "Get list medical staff", DT: filteredList };
     } catch (err) {
         console.error(err);
         return { EC: -1, EM: "Something went wrong in service...", DT: "" };
@@ -361,9 +368,16 @@ const getMedicalStaffById = async (id) => {
             // raw: true,
             // nest: true,
         });
+        user = user.get({ plain: true });
+
         if (user.image) {
             user.image = Buffer.from(user.image, "binary").toString("base64");
         }
+        const formattedAmount = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
+            user?.price
+        );
+        user.price = user?.price ? formattedAmount : null;
+        user.dateOfBirth = user.dateOfBirth ? user.dateOfBirth.toISOString().split("T")[0] : null;
 
         if (user.Specialties && user.Specialties.length > 0) {
             user.Specialties.forEach((item) => {
