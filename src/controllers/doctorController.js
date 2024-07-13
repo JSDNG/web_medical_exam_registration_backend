@@ -69,7 +69,7 @@ const deleteScheduleById = async (req, res) => {
         });
     }
 };
-const getAllAppointment = async (req, res) => {
+const getAllAppointmentDoctor = async (req, res) => {
     try {
         let data = await getAllAppointmentfromOneDoctor(req.query.id);
         return res.status(200).json({
@@ -115,6 +115,6 @@ module.exports = {
     postSchedule,
     getSchedule,
     deleteScheduleById,
-    getAllAppointment,
+    getAllAppointmentDoctor,
     examiningDoctor,
 };

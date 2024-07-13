@@ -247,6 +247,7 @@ const getAllAppointment = async (id) => {
 };
 const deleteAppointment = async (id) => {
     try {
+        console.log(id);
         if (!id) {
             return {
                 EC: 1,
@@ -259,7 +260,7 @@ const deleteAppointment = async (id) => {
         });
         return {
             EC: 0,
-            EM: "Deleted",
+            EM: "Deleted 1",
             DT: "",
         };
     } catch (err) {
@@ -273,6 +274,7 @@ const deleteAppointment = async (id) => {
 };
 const deleteMedicalRecord = async (id) => {
     try {
+        console.log(id);
         if (!id) {
             return {
                 EC: 1,

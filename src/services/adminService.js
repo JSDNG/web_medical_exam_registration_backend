@@ -118,7 +118,7 @@ const loginAccount = async (rawData) => {
             role: role.roleName,
         };
         let token = createJWT(payload);
-   
+
         if (role.roleName !== "Bệnh nhân") {
             user = user.get({ plain: true });
         }
@@ -126,7 +126,10 @@ const loginAccount = async (rawData) => {
         if (user.image) {
             user.image = Buffer.from(user.image, "binary").toString("base64");
         }
-
+        const formattedAmount = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
+            user?.price
+        );
+        user.price = user?.price ? formattedAmount : null;
         user.dateOfBirth = user.dateOfBirth ? user.dateOfBirth.toISOString().split("T")[0] : null;
 
         if (user.Specialties && user.Specialties.length > 0) {
@@ -306,6 +309,10 @@ const getMedicalStaff = async (rawData) => {
             if (item.image) {
                 item.image = Buffer.from(item.image, "binary").toString("base64");
             }
+            const formattedAmount = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
+                item?.price
+            );
+            item.price = item?.price ? formattedAmount : null;
             item.dateOfBirth = item.dateOfBirth ? item.dateOfBirth.toISOString().split("T")[0] : null;
 
             if (item.Specialties) {
@@ -366,6 +373,10 @@ const getMedicalStaffById = async (id) => {
         if (user.image) {
             user.image = Buffer.from(user.image, "binary").toString("base64");
         }
+        const formattedAmount = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
+            user?.price
+        );
+        user.price = user?.price ? formattedAmount : null;
         user.dateOfBirth = user.dateOfBirth ? user.dateOfBirth.toISOString().split("T")[0] : null;
 
         if (user.Specialties && user.Specialties.length > 0) {

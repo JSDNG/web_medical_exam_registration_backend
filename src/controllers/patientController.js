@@ -33,7 +33,7 @@ const postAppointment = async (req, res) => {
         if (relative) {
             const relativeInfo = await createNewRelative(relative);
             if (relativeInfo.EC !== 0) {
-                return res.status(400).json({
+                return res.status(200).json({
                     EC: relativeInfo.EC,
                     EM: relativeInfo.EM,
                     DT: "",
@@ -45,7 +45,7 @@ const postAppointment = async (req, res) => {
         const appointmentInfo = await createAppointment(appointment);
         if (appointmentInfo.EC !== 0) {
             if (relativeId) await deleteRelative(relativeId);
-            return res.status(400).json({
+            return res.status(200).json({
                 EC: appointmentInfo.EC,
                 EM: appointmentInfo.EM,
                 DT: "",
@@ -58,7 +58,7 @@ const postAppointment = async (req, res) => {
         if (data.EC !== 0) {
             if (appointmentId) await deleteAppointment(appointmentId);
             if (relativeId) await deleteRelative(relativeId);
-            return res.status(400).json({
+            return res.status(200).json({
                 EC: data.EC,
                 EM: data.EM,
                 DT: "",
@@ -238,13 +238,15 @@ const quickCheckUp = async (req, res) => {
 
         // Find schedule for patient
         const schedule = await findSchedudeForPatient(dateQuickCheckUp);
+        console.log(schedule);
         if (schedule.EC !== 0 || schedule.DT.length === 0) {
-            return res.status(400).json({
+            return res.status(200).json({
                 EC: schedule.EC,
                 EM: schedule.EM,
                 DT: "",
             });
         }
+
         // Create appointment
         const appointmentInfo = await createAppointment({
             statusId: 2,
@@ -252,7 +254,7 @@ const quickCheckUp = async (req, res) => {
             patientId: medicalRecord?.patientId,
         });
         if (appointmentInfo.EC !== 0) {
-            return res.status(400).json({
+            return res.status(200).json({
                 EC: appointmentInfo.EC,
                 EM: appointmentInfo.EM,
                 DT: "",
@@ -263,7 +265,7 @@ const quickCheckUp = async (req, res) => {
             const relativeInfo = await createNewRelative(relative);
             if (relativeInfo.EC !== 0) {
                 if (appointmentId) await deleteAppointment(appointmentId);
-                return res.status(400).json({
+                return res.status(200).json({
                     EC: relativeInfo.EC,
                     EM: relativeInfo.EM,
                     DT: "",
@@ -284,7 +286,7 @@ const quickCheckUp = async (req, res) => {
         if (medicalRecordInfo.EC !== 0) {
             if (appointmentId) await deleteAppointment(appointmentId);
             if (relativeId) await deleteRelative(relativeId);
-            return res.status(400).json({
+            return res.status(200).json({
                 EC: medicalRecordInfo.EC,
                 EM: medicalRecordInfo.EM,
                 DT: "",
@@ -307,6 +309,7 @@ const quickCheckUp = async (req, res) => {
             doctorInfo: doctorInfo.DT,
             specialtyInfo: specialtyInfo.DT,
             patientInfo: patientInfo.DT,
+            schedule: schedule.DT,
         };
 
         // Send success response
