@@ -5,10 +5,11 @@ const { Op } = require("sequelize");
 
 const updateAppointment = async (rawData) => {
     try {
+        console.log("1", rawData);
         await db.Appointment.update(
             {
                 statusId: rawData.statusId,
-                staffId: rawData.statusId,
+                staffId: rawData.staffId,
             },
             {
                 where: { id: rawData.id },
@@ -93,7 +94,7 @@ const updateAppointment = async (rawData) => {
         console.log(err);
         return {
             EC: -1,
-            EM: "Something wrongs in service... ",
+            EM: "Something wrongs in service... a",
             DT: "",
         };
     }

@@ -52,6 +52,7 @@ const registerAccount = async (rawData) => {
             DT: data.id,
         };
     } catch (err) {
+        console.log(err);
         return {
             EC: -1,
             EM: "Something wrongs in service... ",
@@ -461,6 +462,7 @@ const deleteMedicalStaffById = async (id) => {
             DT: "",
         };
     } catch (err) {
+        console.log(err);
         return {
             EC: -1,
             EM: "Somthing wrongs in service... ",
@@ -481,6 +483,7 @@ const deleteDoctorSpecialtyById = async (id) => {
             DT: "",
         };
     } catch (err) {
+        console.log(err);
         return {
             EC: -1,
             EM: "Somthing wrongs in service... ",

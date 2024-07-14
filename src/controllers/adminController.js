@@ -75,6 +75,7 @@ const login = async (req, res) => {
             DT: data.DT,
         });
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
@@ -91,6 +92,7 @@ const logout = async (req, res) => {
             DT: req.body,
         });
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
@@ -114,6 +116,7 @@ const getAllMedicalStaff = async (req, res) => {
             DT: data.DT,
         });
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
@@ -130,6 +133,7 @@ const getAllTime = async (req, res) => {
             DT: data.DT,
         });
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
@@ -146,6 +150,7 @@ const getAllSpecialty = async (req, res) => {
             DT: data.DT,
         });
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
@@ -162,6 +167,7 @@ const getOneMedicalStaff = async (req, res) => {
             DT: data.DT,
         });
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",

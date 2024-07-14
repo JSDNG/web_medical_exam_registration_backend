@@ -14,6 +14,7 @@ const {
     getOnePatient,
     getOneRelative,
     getAllDoctorfromSpecialtyById,
+    getAllMedicalRecordfromPatientById,
 } = require("../services/patientService");
 
 const postAppointment = async (req, res) => {
@@ -92,6 +93,7 @@ const getAppointment = async (req, res) => {
             DT: data.DT,
         });
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
@@ -108,6 +110,7 @@ const deleteAppointmentById = async (req, res) => {
             DT: data.DT,
         });
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
@@ -125,6 +128,7 @@ const deleteMedicalRecordById = async (req, res) => {
             DT: data.DT,
         });
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
@@ -173,6 +177,7 @@ const putMedicalRecord = async (req, res) => {
             });
         }
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
@@ -197,6 +202,7 @@ const putPatientInfo = async (req, res) => {
             });
         }
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
@@ -214,6 +220,7 @@ const getRelative = async (req, res) => {
             DT: data.DT,
         });
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
@@ -341,6 +348,24 @@ const getAllDoctorfromSpecialty = async (req, res) => {
             DT: data.DT,
         });
     } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            EC: -1,
+            EM: "error from server",
+            DT: "",
+        });
+    }
+};
+const getAllMedicalRecordfromPatient = async (req, res) => {
+    try {
+        let data = await getAllMedicalRecordfromPatientById(req.query);
+        return res.status(200).json({
+            EC: data.EC,
+            EM: data.EM,
+            DT: data.DT,
+        });
+    } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
@@ -359,4 +384,5 @@ module.exports = {
     getRelative,
     quickCheckUp,
     getAllDoctorfromSpecialty,
+    getAllMedicalRecordfromPatient,
 };

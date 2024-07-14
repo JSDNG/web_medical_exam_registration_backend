@@ -5,6 +5,9 @@ const {
     deleteScheduleById,
     getAllAppointmentDoctor,
     examiningDoctor,
+    postPrescription,
+    deleteMultiPrescription,
+    postInvoice,
 } = require("../controllers/doctorController");
 const {
     register,
@@ -27,6 +30,7 @@ const {
     getRelative,
     quickCheckUp,
     getAllDoctorfromSpecialty,
+    getAllMedicalRecordfromPatient,
 } = require("../controllers/patientController");
 
 const {
@@ -62,11 +66,17 @@ const initAPIRoutes = (app) => {
     router.put("/staff/appointment", putAppointment);
     router.get("/staff/appointment/all", getAllAppointment);
     router.delete("/staff/delete/medical-record/appointment", deleteAppointmentAndMedicalRecord);
+
+    router.post("/doctor/prescription", postPrescription);
+    router.delete("/doctor/prescription", deleteMultiPrescription);
+
+    router.post("/doctor/invoice", postInvoice);
     // Patient
     router.post("/patient/appointment", postAppointment);
     //router.get("/patient/:id/appointment/all", getAppointment);
     router.delete("/patient/appointment/:id", deleteAppointmentById);
 
+    router.get("/patient/medical-record/all", getAllMedicalRecordfromPatient);
     router.put("/patient/medical-record", putMedicalRecord);
     router.delete("/patient/medical-record/:id", deleteMedicalRecordById);
 
@@ -77,6 +87,7 @@ const initAPIRoutes = (app) => {
     router.get("/relative/all", getRelative);
 
     router.get("/all-doctor/specialty-by-id", getAllDoctorfromSpecialty);
+
     return app.use("/api/v1/", router);
 };
 
