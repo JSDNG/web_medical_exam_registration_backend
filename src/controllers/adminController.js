@@ -9,6 +9,9 @@ const {
     putMedicalStaffById,
     deleteMedicalStaffById,
     deleteDoctorSpecialtyById,
+    getPosition,
+    putSpecialtyById,
+    createNewSpecialty,
 } = require("../services/adminService");
 const { createDoctorSpecialty } = require("../services/doctorService");
 const register = async (req, res) => {
@@ -75,6 +78,7 @@ const login = async (req, res) => {
             DT: data.DT,
         });
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
@@ -91,6 +95,7 @@ const logout = async (req, res) => {
             DT: req.body,
         });
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
@@ -114,6 +119,7 @@ const getAllMedicalStaff = async (req, res) => {
             DT: data.DT,
         });
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
@@ -130,6 +136,48 @@ const getAllTime = async (req, res) => {
             DT: data.DT,
         });
     } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            EC: -1,
+            EM: "error from server",
+            DT: "",
+        });
+    }
+};
+const getAllPosition = async (req, res) => {
+    try {
+        let data = await getPosition();
+        return res.status(200).json({
+            EC: data.EC,
+            EM: data.EM,
+            DT: data.DT,
+        });
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            EC: -1,
+            EM: "error from server",
+            DT: "",
+        });
+    }
+};
+const postSpecialty = async (req, res) => {
+    try {
+        if (!req.body) {
+            return res.status(200).json({
+                EC: 1,
+                EM: "Missing required parameters",
+                DT: "",
+            });
+        }
+        let data = await createNewSpecialty(req.body);
+        return res.status(200).json({
+            EC: data.EC,
+            EM: data.EM,
+            DT: data.DT,
+        });
+    } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
@@ -146,6 +194,32 @@ const getAllSpecialty = async (req, res) => {
             DT: data.DT,
         });
     } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            EC: -1,
+            EM: "error from server",
+            DT: "",
+        });
+    }
+};
+const putOneSpecialty = async (req, res) => {
+    try {
+        // console.log(req.body);
+        if (!req.body.id) {
+            return res.status(200).json({
+                EC: 1,
+                EM: "Missing required params",
+                DT: "",
+            });
+        }
+        let data = await putSpecialtyById(req.body);
+        return res.status(200).json({
+            EC: data.EC,
+            EM: data.EM,
+            DT: data.DT,
+        });
+    } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
@@ -162,6 +236,7 @@ const getOneMedicalStaff = async (req, res) => {
             DT: data.DT,
         });
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
@@ -171,6 +246,7 @@ const getOneMedicalStaff = async (req, res) => {
 };
 const putOneMedicalStaff = async (req, res) => {
     try {
+        console.log(".....", req.body);
         if (!req.body.id) {
             return res.status(200).json({
                 EC: 1,
@@ -178,6 +254,7 @@ const putOneMedicalStaff = async (req, res) => {
                 DT: "",
             });
         }
+
         if (req.body?.specialty?.length > 0) {
             await createDoctorSpecialty(req.body.specialty, req.body.id);
         }
@@ -232,7 +309,10 @@ module.exports = {
     logout,
     getAllMedicalStaff,
     getAllTime,
+    getAllPosition,
+    postSpecialty,
     getAllSpecialty,
+    putOneSpecialty,
     getOneMedicalStaff,
     putOneMedicalStaff,
     deleteOneMedicalStaff,

@@ -5,6 +5,9 @@ const {
     deleteScheduleById,
     getAllAppointmentDoctor,
     examiningDoctor,
+    postPrescription,
+    deleteMultiPrescription,
+    postInvoice,
 } = require("../controllers/doctorController");
 const {
     register,
@@ -16,6 +19,9 @@ const {
     getOneMedicalStaff,
     putOneMedicalStaff,
     deleteOneMedicalStaff,
+    getAllPosition,
+    putOneSpecialty,
+    postSpecialty,
 } = require("../controllers/adminController");
 const {
     postAppointment,
@@ -27,6 +33,7 @@ const {
     getRelative,
     quickCheckUp,
     getAllDoctorfromSpecialty,
+    getAllMedicalRecordfromPatient,
 } = require("../controllers/patientController");
 
 const {
@@ -47,11 +54,14 @@ const initAPIRoutes = (app) => {
     // Admin
     router.get("/admin/medical-staff/all", getAllMedicalStaff);
     router.get("/admin/time/all", getAllTime);
+    router.get("/admin/position/all", getAllPosition);
     router.get("/admin/specialty/all", getAllSpecialty);
     router.get("/medical-staff/:id", getOneMedicalStaff);
     router.put("/medical-staff", putOneMedicalStaff);
     router.delete("/medical-staff/:id", deleteOneMedicalStaff);
 
+    router.post("/admin/specialty", postSpecialty);
+    router.put("/admin/specialty", putOneSpecialty);
     // Doctor
     router.get("/doctor/:id/schedule/all", getSchedule);
     router.post("/doctor/schedule", postSchedule);
@@ -62,11 +72,17 @@ const initAPIRoutes = (app) => {
     router.put("/staff/appointment", putAppointment);
     router.get("/staff/appointment/all", getAllAppointment);
     router.delete("/staff/delete/medical-record/appointment", deleteAppointmentAndMedicalRecord);
+
+    router.post("/doctor/prescription", postPrescription);
+    router.delete("/doctor/prescription", deleteMultiPrescription);
+
+    router.post("/doctor/invoice", postInvoice);
     // Patient
     router.post("/patient/appointment", postAppointment);
     //router.get("/patient/:id/appointment/all", getAppointment);
     router.delete("/patient/appointment/:id", deleteAppointmentById);
 
+    router.get("/patient/medical-record/all", getAllMedicalRecordfromPatient);
     router.put("/patient/medical-record", putMedicalRecord);
     router.delete("/patient/medical-record/:id", deleteMedicalRecordById);
 
@@ -77,6 +93,7 @@ const initAPIRoutes = (app) => {
     router.get("/relative/all", getRelative);
 
     router.get("/all-doctor/specialty-by-id", getAllDoctorfromSpecialty);
+
     return app.use("/api/v1/", router);
 };
 

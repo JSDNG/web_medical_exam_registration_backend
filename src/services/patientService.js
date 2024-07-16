@@ -301,6 +301,7 @@ const deleteMedicalRecord = async (id) => {
 };
 const putMedicalRecordById = async (rawData) => {
     try {
+        console.log(rawData);
         await db.MedicalRecord.update(
             {
                 medicalHistory: rawData.medicalHistory,
@@ -318,6 +319,7 @@ const putMedicalRecordById = async (rawData) => {
             DT: "",
         };
     } catch (err) {
+        console.log(err);
         return {
             EC: -1,
             EM: "Something wrongs in service... ",
@@ -526,9 +528,15 @@ const getAllDoctorfromSpecialtyById = async (id) => {
                     through: { attributes: [] },
                     include: [
                         {
+                            model: db.Specialty,
+                            attributes: ["id", "specialtyName", "description"],
+                            through: { attributes: [] },
+                        },
+                        {
                             model: db.Position,
                             attributes: ["id", "positionName"],
                         },
+                        
                     ],
                 },
             ],
@@ -562,6 +570,163 @@ const getAllDoctorfromSpecialtyById = async (id) => {
         };
     }
 };
+const getAllMedicalRecordfromPatientById = async (rawData) => {
+    try {
+        const data = await db.MedicalRecord.findAll({
+            where: {
+                patientId: rawData.patientId,
+                statusId: rawData.statusId,
+            },
+            attributes: ["id", "medicalHistory", "reason", "diagnosis"],
+            include: [
+                {
+                    model: db.Relative,
+                    attributes: ["id", "fullName", "dateOfBirth", "gender", "phone", "email", "address"],
+                },
+                {
+                    model: db.Patient,
+                    attributes: ["id", "fullName", "dateOfBirth", "gender", "phone", "address"],
+                    include: [
+                        {
+                            model: db.Account,
+                            attributes: ["email"],
+                        },
+                    ],
+                },
+                {
+                    model: db.AllStatus,
+                    attributes: ["id", "statusName"],
+                },
+                {
+                    model: db.Specialty,
+                    attributes: ["id", "specialtyName"],
+                },
+                {
+                    model: db.Appointment,
+                    attributes: ["id", "appointmentNumber"],
+                    include: [
+                        {
+                            model: db.Schedule,
+                            attributes: ["id", "date"],
+                            include: [
+                                {
+                                    model: db.PeriodOfTime,
+                                    attributes: ["id", "time"],
+                                },
+                            ],
+                        },
+                    ],
+                },
+
+                {
+                    model: db.MedicalStaff,
+                    attributes: ["id", "fullName", "dateOfBirth", "gender", "phone", "address"],
+                },
+                {
+                    model: db.Prescription,
+                    attributes: ["id", "medicationName", "price", "quantity", "instruction"],
+                },
+                {
+                    model: db.Invoice,
+                    attributes: ["id", "totalPrice", "dateCreated"],
+                },
+            ],
+            raw: true,
+            nest: true,
+        });
+        const groupedData = data.reduce((acc, current) => {
+            const found = acc.find((item) => item.id === current.id);
+            if (found) {
+                if (!Array.isArray(found.Prescriptions)) {
+                    found.Prescriptions = [found.Prescriptions];
+                }
+                found.Prescriptions.push(current.Prescriptions);
+            } else {
+                current.Prescriptions = [current.Prescriptions];
+                acc.push(current);
+            }
+            return acc;
+        }, []);
+
+        const result = {
+            MedicalRecordRelative: [],
+            MedicalRecordPatient: [],
+        };
+
+        groupedData.forEach((record) => {
+            const commonFields = {
+                id: record.id,
+                medicalHistory: record.medicalHistory,
+                reason: record.reason,
+                diagnosis: record.diagnosis,
+                statusMR: record.AllStatus.statusName,
+                specialtyMR: record.Specialty.specialtyName,
+                appointmentNumber: record.Appointment.appointmentNumber,
+                date: record.Appointment.Schedule.date
+                    ? record.Appointment.Schedule.date.toISOString().split("T")[0]
+                    : null,
+                time: record.Appointment.Schedule.PeriodOfTime.time,
+                MedicalStaff: {
+                    fullName: record.MedicalStaff.fullName,
+                    dateOfBirth: record.MedicalStaff.dateOfBirth
+                        ? record.MedicalStaff.dateOfBirth.toISOString().split("T")[0]
+                        : null,
+                    gender: record.MedicalStaff.gender,
+                    phone: record.MedicalStaff.phone,
+                    address: record.MedicalStaff.address,
+                },
+                Prescriptions: record.Prescriptions[0].id ? record.Prescriptions : null,
+                Invoice: record.Invoices.id ? record.Invoices : null,
+            };
+
+            if (record.Relative && record.Relative.id) {
+                result.MedicalRecordRelative.push({
+                    ...commonFields,
+                    Patient: {
+                        id: record.Relative.id,
+                        fullName: record.Relative.fullName,
+                        dateOfBirth: record.Relative.dateOfBirth
+                            ? record.Relative.dateOfBirth.toISOString().split("T")[0]
+                            : null,
+                        gender: record.Relative.gender,
+                        phone: record.Relative.phone,
+                        email: record.Relative.email,
+                        address: record.Relative.address,
+                    },
+                });
+            } else {
+                result.MedicalRecordPatient.push({
+                    ...commonFields,
+                    Patient: {
+                        id: record.Patient.id,
+                        fullName: record.Patient.fullName,
+                        dateOfBirth: record.Patient.dateOfBirth
+                            ? record.Patient.dateOfBirth.toISOString().split("T")[0]
+                            : null,
+                        gender: record.Patient.gender,
+                        phone: record.Patient.phone,
+                        email: record.Patient.Account?.email,
+                        address: record.Patient.address,
+                    },
+                });
+            }
+        });
+
+        return {
+            EC: 0,
+            EM: "Get All medical record",
+            DT: result,
+        };
+    } catch (err) {
+        console.error(err);
+        return {
+            EC: -1,
+            EM: "Something wrongs in service...",
+            DT: "",
+        };
+    }
+};
+
 module.exports = {
     createAppointment,
     getAllAppointment,
@@ -577,4 +742,5 @@ module.exports = {
     getOnePatient,
     getOneRelative,
     getAllDoctorfromSpecialtyById,
+    getAllMedicalRecordfromPatientById,
 };

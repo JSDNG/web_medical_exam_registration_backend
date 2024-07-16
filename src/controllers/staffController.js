@@ -18,6 +18,7 @@ const putAppointment = async (req, res) => {
             });
         }
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
@@ -34,6 +35,7 @@ const getAllAppointment = async (req, res) => {
             DT: data.DT,
         });
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
@@ -60,6 +62,7 @@ const deleteAppointmentAndMedicalRecord = async (req, res) => {
             DT: result.DT,
         });
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",

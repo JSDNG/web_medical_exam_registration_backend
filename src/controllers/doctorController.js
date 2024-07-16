@@ -3,6 +3,9 @@ const {
     createSchedule,
     deleteSchedule,
     getAllAppointmentfromOneDoctor,
+    createPrescription,
+    deletePrescription,
+    createInvoice,
 } = require("../services/doctorService");
 const { putMedicalRecordById } = require("../services/patientService");
 const { updateAppointment } = require("../services/staffService");
@@ -46,6 +49,7 @@ const getSchedule = async (req, res) => {
             DT: data.DT,
         });
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
@@ -62,6 +66,7 @@ const deleteScheduleById = async (req, res) => {
             DT: data.DT,
         });
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
@@ -78,6 +83,7 @@ const getAllAppointmentDoctor = async (req, res) => {
             DT: data.DT,
         });
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             EC: -1,
             EM: "error from server",
@@ -95,8 +101,80 @@ const examiningDoctor = async (req, res) => {
             });
         }
 
-         await updateAppointment(req.body.appointment);
+        await updateAppointment(req.body.appointment);
         let data = await putMedicalRecordById(req.body.medicalRecord);
+        return res.status(200).json({
+            EC: data.EC,
+            EM: data.EM,
+            DT: data.DT,
+        });
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            EC: -1,
+            EM: "error from server",
+            DT: "",
+        });
+    }
+};
+const postPrescription = async (req, res) => {
+    try {
+        if (!req.body) {
+            return res.status(200).json({
+                EC: 1,
+                EM: "Missing required parameters",
+                DT: "",
+            });
+        }
+        let data = await createPrescription(req.body);
+        return res.status(200).json({
+            EC: data.EC,
+            EM: data.EM,
+            DT: data.DT,
+        });
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            EC: -1,
+            EM: "error from server",
+            DT: "",
+        });
+    }
+};
+const deleteMultiPrescription = async (req, res) => {
+    try {
+        if (!req.body) {
+            return res.status(200).json({
+                EC: 1,
+                EM: "Missing required parameters",
+                DT: "",
+            });
+        }
+        let data = await deletePrescription(req.body);
+        return res.status(200).json({
+            EC: data.EC,
+            EM: data.EM,
+            DT: data.DT,
+        });
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            EC: -1,
+            EM: "error from server",
+            DT: "",
+        });
+    }
+};
+const postInvoice = async (req, res) => {
+    try {
+        if (!req.body) {
+            return res.status(200).json({
+                EC: 1,
+                EM: "Missing required parameters",
+                DT: "",
+            });
+        }
+        let data = await createInvoice(req.body);
         return res.status(200).json({
             EC: data.EC,
             EM: data.EM,
@@ -117,4 +195,7 @@ module.exports = {
     deleteScheduleById,
     getAllAppointmentDoctor,
     examiningDoctor,
+    postPrescription,
+    deleteMultiPrescription,
+    postInvoice,
 };

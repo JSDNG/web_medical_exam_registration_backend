@@ -2,13 +2,15 @@ const db = require("../models");
 const _ = require("lodash");
 const { reduce } = require("lodash");
 const { Op } = require("sequelize");
+const { sendEmailAppointment } = require("./emailService");
 
 const updateAppointment = async (rawData) => {
     try {
+        console.log("1", rawData);
         await db.Appointment.update(
             {
                 statusId: rawData.statusId,
-                staffId: rawData.statusId,
+                staffId: rawData.staffId,
             },
             {
                 where: { id: rawData.id },
@@ -67,7 +69,7 @@ const updateAppointment = async (rawData) => {
             appointmentNumber: data.appointmentNumber,
             date: data.Schedule.date.toISOString().split("T")[0],
             time: data.Schedule.PeriodOfTime.time,
-            MedicalStaff: data.Schedule.MedicalRecord,
+            MedicalStaff: data.Schedule.MedicalStaff,
             MedicalRecord: {
                 id: data.MedicalRecords.id,
                 medicalHistory: data.MedicalRecords.medicalHistory,
@@ -84,16 +86,20 @@ const updateAppointment = async (rawData) => {
                 address: patientInfo.address,
             },
         };
+        if (rawData.staffId) {
+            await sendEmailAppointment(result);
+        }
+
         return {
             EC: 0,
             EM: "Approve appointment",
-            DT: result,
+            DT: "result",
         };
     } catch (err) {
         console.log(err);
         return {
             EC: -1,
-            EM: "Something wrongs in service... ",
+            EM: "Something wrongs in service... a",
             DT: "",
         };
     }

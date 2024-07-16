@@ -371,10 +371,79 @@ const createDoctorSpecialty = async (rawData, id) => {
         };
     }
 };
+const createPrescription = async (rawData) => {
+    try {
+        let data = await db.Prescription.bulkCreate(rawData);
+        let total = data.reduce((acc, item) => acc + item.price * item.quantity, 0);
+        console.log(total);
+        return {
+            EC: 0,
+            EM: "Prescription created successfully",
+            DT: total,
+        };
+    } catch (err) {
+        console.error(err);
+        return {
+            EC: -1,
+            EM: "Something wrongs in service...",
+            DT: "",
+        };
+    }
+};
+const deletePrescription = async (rawData) => {
+    try {
+        await db.Prescription.destroy({
+            where: {
+                id: {
+                    [Op.in]: rawData,
+                },
+            },
+        });
+        return {
+            EC: 0,
+            EM: "Deleted",
+            DT: "",
+        };
+    } catch (err) {
+        console.log(err);
+        return {
+            EC: -1,
+            EM: "Something went wrong in service...",
+            DT: "",
+        };
+    }
+};
+const createInvoice = async (rawData) => {
+    try {
+        console.log(rawData);
+        let data = await db.Invoice.create({
+            totalPrice: DataTypes.STRING,
+            dateCreated: DataTypes.DATE,
+            doctorId: DataTypes.INTEGER,
+            recordId: DataTypes.INTEGER,
+        });
+        return {
+            EC: 0,
+            EM: "Invoice created successfully",
+            DT: data,
+        };
+    } catch (err) {
+        console.error(err);
+        return {
+            EC: -1,
+            EM: "Something wrongs in service...",
+            DT: "",
+        };
+    }
+};
+
 module.exports = {
     createSchedule,
     getAllSchedule,
     deleteSchedule,
     getAllAppointmentfromOneDoctor,
     createDoctorSpecialty,
+    createPrescription,
+    deletePrescription,
+    createInvoice,
 };
