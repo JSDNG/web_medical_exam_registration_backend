@@ -12,8 +12,8 @@ const port = process.env.PORT;
 const hostname = process.env.HOST_NAME;
 
 //config req.body
-app.use(express.json()); // Used to parse JSON bodies
-app.use(express.urlencoded({ extended: true })); //Parse URL-encoded bodies
+app.use(express.json()); // Used to parse JSON bodies // {limit: "50mb"}
+app.use(express.urlencoded({ extended: true })); //Parse URL-encoded bodies // {limit: "50mb"}
 
 // Middleware to handle JSON parse errors
 app.use((err, req, res, next) => {

@@ -2,6 +2,7 @@ const db = require("../models");
 const _ = require("lodash");
 const { reduce } = require("lodash");
 const { Op } = require("sequelize");
+const { sendEmailAppointment } = require("./emailService");
 
 const updateAppointment = async (rawData) => {
     try {
@@ -68,7 +69,7 @@ const updateAppointment = async (rawData) => {
             appointmentNumber: data.appointmentNumber,
             date: data.Schedule.date.toISOString().split("T")[0],
             time: data.Schedule.PeriodOfTime.time,
-            MedicalStaff: data.Schedule.MedicalRecord,
+            MedicalStaff: data.Schedule.MedicalStaff,
             MedicalRecord: {
                 id: data.MedicalRecords.id,
                 medicalHistory: data.MedicalRecords.medicalHistory,
@@ -85,10 +86,14 @@ const updateAppointment = async (rawData) => {
                 address: patientInfo.address,
             },
         };
+        if (rawData.staffId) {
+            await sendEmailAppointment(result);
+        }
+
         return {
             EC: 0,
             EM: "Approve appointment",
-            DT: result,
+            DT: "result",
         };
     } catch (err) {
         console.log(err);

@@ -528,9 +528,15 @@ const getAllDoctorfromSpecialtyById = async (id) => {
                     through: { attributes: [] },
                     include: [
                         {
+                            model: db.Specialty,
+                            attributes: ["id", "specialtyName", "description"],
+                            through: { attributes: [] },
+                        },
+                        {
                             model: db.Position,
                             attributes: ["id", "positionName"],
                         },
+                        
                     ],
                 },
             ],

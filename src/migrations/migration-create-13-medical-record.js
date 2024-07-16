@@ -61,6 +61,7 @@ module.exports = {
                 appointmentId: {
                     type: Sequelize.INTEGER,
                     allowNull: false,
+                    onDelete: "cascade",
                     references: {
                         model: "Appointment",
                         key: "id",

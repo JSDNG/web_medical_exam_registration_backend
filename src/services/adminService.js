@@ -127,10 +127,10 @@ const loginAccount = async (rawData) => {
         if (user.image) {
             user.image = Buffer.from(user.image, "binary").toString("base64");
         }
-        const formattedAmount = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
-            user?.price
-        );
-        user.price = user?.price ? formattedAmount : null;
+        // const formattedAmount = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
+        //     user?.price
+        // );
+        // user.price = user?.price ? formattedAmount : null;
         user.dateOfBirth = user.dateOfBirth ? user.dateOfBirth.toISOString().split("T")[0] : null;
 
         if (user.Specialties && user.Specialties.length > 0) {
@@ -198,6 +198,18 @@ const getTime = async () => {
     try {
         let results = await db.PeriodOfTime.findAll({ attributes: ["id", "time"] });
         let data = results && results.length > 0 ? results.map((result) => result.get({ plain: true })) : [];
+        data.sort((a, b) => {
+            const timeA = a.time.split(" - ")[0];
+            const timeB = b.time.split(" - ")[0];
+            const [hoursA, minutesA] = timeA.split(":").map(Number);
+            const [hoursB, minutesB] = timeB.split(":").map(Number);
+
+            if (hoursA !== hoursB) {
+                return hoursA - hoursB;
+            } else {
+                return minutesA - minutesB;
+            }
+        });
         return {
             EC: 0,
             EM: "Get the time list",
@@ -212,6 +224,47 @@ const getTime = async () => {
         };
     }
 };
+const getPosition = async () => {
+    try {
+        let results = await db.Position.findAll({ attributes: ["id", "positionName"] });
+        let data = results && results.length > 0 ? results.map((result) => result.get({ plain: true })) : [];
+        return {
+            EC: 0,
+            EM: "Get the position list",
+            DT: data,
+        };
+    } catch (err) {
+        console.log(err);
+        return {
+            EC: -1,
+            EM: "Something wrongs in service... ",
+            DT: "",
+        };
+    }
+};
+const createNewSpecialty = async (rawData) => {
+    try {
+        const binaryData = Buffer.from(rawData.image, "base64");
+        let data = await db.Specialty.create({
+            specialtyName: rawData.specialtyName,
+            image: binaryData,
+            description: rawData.description,
+        });
+        return {
+            EC: 0,
+            EM: "Specialty created successfully",
+            DT: data,
+        };
+    } catch (err) {
+        console.log(err);
+        return {
+            EC: -1,
+            EM: "Something wrongs in service... ",
+            DT: "",
+        };
+    }
+};
+
 const getSpecialty = async () => {
     try {
         let results = await db.Specialty.findAll({ attributes: ["id", "specialtyName", "description", "image"] });
@@ -235,6 +288,35 @@ const getSpecialty = async () => {
         };
     }
 };
+
+const putSpecialtyById = async (rawData) => {
+    try {
+        const binaryData = Buffer.from(rawData.image, "base64");
+        await db.Specialty.update(
+            {
+                specialtyName: rawData.specialtyName,
+                image: binaryData,
+                description: rawData.description,
+            },
+            {
+                where: { id: rawData.id },
+            }
+        );
+        return {
+            EC: 0,
+            EM: "Specialty updated successfully",
+            DT: "",
+        };
+    } catch (err) {
+        console.log(err);
+        return {
+            EC: -1,
+            EM: "Something wrongs in service... ",
+            DT: "",
+        };
+    }
+};
+
 const getOneSpecialty = async (id) => {
     try {
         let result = await db.Specialty.findOne({
@@ -310,10 +392,10 @@ const getMedicalStaff = async (rawData) => {
             if (item.image) {
                 item.image = Buffer.from(item.image, "binary").toString("base64");
             }
-            const formattedAmount = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
-                item?.price
-            );
-            item.price = item?.price ? formattedAmount : null;
+            // const formattedAmount = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
+            //     item?.price
+            // );
+            // item.price = item?.price ? formattedAmount : null;
             item.dateOfBirth = item.dateOfBirth ? item.dateOfBirth.toISOString().split("T")[0] : null;
 
             if (item.Specialties) {
@@ -374,10 +456,10 @@ const getMedicalStaffById = async (id) => {
         if (user.image) {
             user.image = Buffer.from(user.image, "binary").toString("base64");
         }
-        const formattedAmount = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
-            user?.price
-        );
-        user.price = user?.price ? formattedAmount : null;
+        // const formattedAmount = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
+        //     user?.price
+        // );
+        // user.price = user?.price ? formattedAmount : null;
         user.dateOfBirth = user.dateOfBirth ? user.dateOfBirth.toISOString().split("T")[0] : null;
 
         if (user.Specialties && user.Specialties.length > 0) {
@@ -411,10 +493,11 @@ const putMedicalStaffById = async (rawData) => {
                 DT: "",
             };
         }
-        let user = await db.MedicalStaff.update(
+        const binaryData = Buffer.from(rawData.image, "base64");
+        await db.MedicalStaff.update(
             {
                 fullName: rawData.fullName,
-                image: rawData.image,
+                image: binaryData,
                 dateOfBirth: new Date(rawData.dateOfBirth),
                 gender: rawData.gender,
                 phone: rawData.phone,
@@ -497,6 +580,9 @@ module.exports = {
     loginAccount,
     createNewUser,
     getTime,
+    getPosition,
+    createNewSpecialty,
+    putSpecialtyById,
     getSpecialty,
     getOneSpecialty,
     getMedicalStaff,

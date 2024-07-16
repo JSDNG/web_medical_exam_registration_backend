@@ -19,6 +19,9 @@ const {
     getOneMedicalStaff,
     putOneMedicalStaff,
     deleteOneMedicalStaff,
+    getAllPosition,
+    putOneSpecialty,
+    postSpecialty,
 } = require("../controllers/adminController");
 const {
     postAppointment,
@@ -51,11 +54,14 @@ const initAPIRoutes = (app) => {
     // Admin
     router.get("/admin/medical-staff/all", getAllMedicalStaff);
     router.get("/admin/time/all", getAllTime);
+    router.get("/admin/position/all", getAllPosition);
     router.get("/admin/specialty/all", getAllSpecialty);
     router.get("/medical-staff/:id", getOneMedicalStaff);
     router.put("/medical-staff", putOneMedicalStaff);
     router.delete("/medical-staff/:id", deleteOneMedicalStaff);
 
+    router.post("/admin/specialty", postSpecialty);
+    router.put("/admin/specialty", putOneSpecialty);
     // Doctor
     router.get("/doctor/:id/schedule/all", getSchedule);
     router.post("/doctor/schedule", postSchedule);
