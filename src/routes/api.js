@@ -6,8 +6,8 @@ const {
     getAllAppointmentDoctor,
     examiningDoctor,
     postPrescription,
-    deleteMultiPrescription,
     postInvoice,
+    getAllInvoice,
 } = require("../controllers/doctorController");
 const {
     register,
@@ -78,7 +78,8 @@ const initAPIRoutes = (app) => {
 
     router.post("/doctor/prescription", postPrescription);
 
-    router.post("/doctor/invoice", postInvoice);
+    router.post("/doctor/send-email-invoice", postInvoice);
+    router.get("/doctor/invoice", getAllInvoice);
     // Staff
     router.put("/staff/appointment", putAppointment);
     router.get("/staff/appointment/all", getAllAppointment);

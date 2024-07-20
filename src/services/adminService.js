@@ -121,7 +121,7 @@ const loginAccount = async (rawData) => {
         //     user?.price
         // );
         // user.price = user?.price ? formattedAmount : null;
-
+        user.dateOfBirth = user.dateOfBirth ? user.dateOfBirth.toISOString().split("T")[0] : null;
         if (user.Specialties && user.Specialties.length > 0) {
             user.Specialties.forEach((item) => {
                 if (item.image) {
@@ -720,6 +720,103 @@ const getMedication = async () => {
         };
     }
 };
+const getAllScheduleByDoctor = async (specialty) => {
+    try {
+        // Lấy dữ liệu từ cơ sở dữ liệu
+        let data = await db.Schedule.findAll({
+            attributes: ["id", "date", "doctorId", "timeId"],
+            include: [
+                {
+                    model: db.Appointment,
+                    attributes: ["id"],
+                },
+                {
+                    model: db.MedicalStaff,
+                    attributes: ["id", "fullName"],
+                    include: [
+                        {
+                            model: db.Specialty,
+                            attributes: ["id", "specialtyName"],
+                            through: { attributes: [] },
+                        },
+                    ],
+                },
+            ],
+            order: [["date", "ASC"]],
+        });
+
+        // Kiểm tra nếu data không có giá trị thì trả về mảng rỗng
+        if (!data || data.length === 0) {
+            return {
+                EC: 0,
+                EM: "No schedules found",
+                DT: [],
+            };
+        }
+        let schedules = data && data.length > 0 ? data.map((result) => result.get({ plain: true })) : [];
+        const filteredSchedules = schedules.filter((schedule) =>
+            schedule.MedicalStaff.Specialties.some((specialtyItem) => specialtyItem.specialtyName === specialty)
+        );
+        // Lấy tất cả các timeId cần thiết trong một lần truy vấn
+        const timeIds = [...new Set(filteredSchedules.map((schedule) => schedule.timeId))];
+        const times = await db.PeriodOfTime.findAll({
+            where: { id: timeIds },
+            attributes: ["id", "time"],
+            raw: true,
+        });
+
+        // Tạo một map từ timeId đến time để dễ dàng tra cứu
+        const timeMap = times.reduce((acc, time) => {
+            acc[time.id] = time.time;
+            return acc;
+        }, {});
+
+        // Nhóm các đối tượng theo ngày và thay thế timeId bằng thời gian tương ứng
+        const groupedData = filteredSchedules.reduce((acc, schedule) => {
+            const date = schedule.date.toISOString().split("T")[0]; // Lấy ngày (không lấy giờ)
+            if (!acc[date]) {
+                acc[date] = [];
+            }
+            schedule.timeId = { time: timeMap[schedule.timeId] };
+            schedule.date = schedule.date.toISOString().split("T")[0];
+            acc[date].push(schedule);
+            return acc;
+        }, {});
+
+        // Chuyển đổi định dạng để trả về
+        const result = Object.keys(groupedData).map((date) => ({
+            date,
+            schedules: groupedData[date],
+        }));
+
+        // Sắp xếp thời gian của lịch trình theo thứ tự tăng dần
+        result.forEach((item) => {
+            item.schedules.sort((a, b) => {
+                // Trích xuất thời gian bắt đầu từ chuỗi thời gian
+                const timeA = a.timeId.time.split(" - ")[0];
+                const timeB = b.timeId.time.split(" - ")[0];
+
+                // Chuyển đổi thời gian sang dạng số để so sánh
+                const [hoursA, minutesA] = timeA.split(":").map(Number);
+                const [hoursB, minutesB] = timeB.split(":").map(Number);
+
+                return hoursA - hoursB || minutesA - minutesB;
+            });
+        });
+        return {
+            EC: 0,
+            EM: "Get the schedule list",
+            DT: result,
+        };
+    } catch (err) {
+        console.log(err);
+        return {
+            EC: -1,
+            EM: "Something went wrong in service...",
+            DT: "",
+        };
+    }
+};
 module.exports = {
     registerAccount,
     loginAccount,
@@ -740,4 +837,5 @@ module.exports = {
     getMedication,
     createNewMedication,
     putMedicationById,
+    getAllScheduleByDoctor,
 };

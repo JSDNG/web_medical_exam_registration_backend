@@ -13,6 +13,7 @@ const {
     getOneRelative,
     getAllMedicalRecordfromPatientById,
 } = require("../services/patientService");
+const { deleteAppointment } = require("./staffController");
 
 const postAppointment = async (req, res) => {
     let relativeId = null;
@@ -195,7 +196,7 @@ const quickCheckUp = async (req, res) => {
     let appointmentId = null;
     let relativeId = null;
     try {
-        const { medicalRecord, dateQuickCheckUp, relative } = req.body;
+        const { medicalRecord, dateQuickCheckUp, specialty, relative } = req.body;
         // Input validation
         if (!medicalRecord || !dateQuickCheckUp) {
             return res.status(400).json({
@@ -206,7 +207,7 @@ const quickCheckUp = async (req, res) => {
         }
 
         // Find schedule for patient
-        const schedule = await findSchedudeForPatient(dateQuickCheckUp);
+        const schedule = await findSchedudeForPatient(dateQuickCheckUp, specialty);
         console.log(schedule);
         if (schedule.EC !== 0 || schedule.DT.length === 0) {
             return res.status(200).json({

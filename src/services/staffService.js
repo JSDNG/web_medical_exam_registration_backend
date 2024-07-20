@@ -63,17 +63,17 @@ const updateAppointment = async (rawData) => {
             nest: true,
         });
         let patientInfo =
-            data.MedicalRecords.Relative.id !== null ? data.MedicalRecords.Relative : data.MedicalRecords.Patient;
+            data.MedicalRecord.Relative.id !== null ? data.MedicalRecord.Relative : data.MedicalRecord.Patient;
         result = {
             appointmentNumber: data.appointmentNumber,
             date: data.Schedule.date.toISOString().split("T")[0],
             time: data.Schedule.PeriodOfTime.time,
             MedicalStaff: data.Schedule.MedicalStaff,
             MedicalRecord: {
-                id: data.MedicalRecords.id,
-                medicalHistory: data.MedicalRecords.medicalHistory,
-                reason: data.MedicalRecords.reason,
-                specialtyMR: data.MedicalRecords.Specialty.specialtyName,
+                id: data.MedicalRecord.id,
+                medicalHistory: data.MedicalRecord.medicalHistory,
+                reason: data.MedicalRecord.reason,
+                specialtyMR: data.MedicalRecord.Specialty.specialtyName,
             },
             Patient: {
                 id: patientInfo.id,
@@ -144,14 +144,7 @@ const getAllAppointmentById = async (id) => {
                     include: [
                         {
                             model: db.MedicalStaff,
-                            attributes: [
-                                "id",
-                                "fullName",
-                                "gender",
-                                "phone",
-                                "description",
-                                "price",
-                            ],
+                            attributes: ["id", "fullName", "gender", "phone", "description", "price"],
                         },
                         {
                             model: db.PeriodOfTime,
@@ -174,7 +167,7 @@ const getAllAppointmentById = async (id) => {
         }
         let results = data.map((item) => {
             let patientInfo =
-                item.MedicalRecords.Relative.id !== null ? item.MedicalRecords.Relative : item.MedicalRecords.Patient;
+                item.MedicalRecord.Relative.id !== null ? item.MedicalRecord.Relative : item.MedicalRecord.Patient;
 
             let items = {
                 id: item.id,
@@ -184,10 +177,10 @@ const getAllAppointmentById = async (id) => {
                 time: item.Schedule.PeriodOfTime.time,
                 date: item.Schedule.date.toISOString().split("T")[0],
                 MedicalRecord: {
-                    id: item.MedicalRecords.id,
-                    medicalHistory: item.MedicalRecords.medicalHistory,
-                    reason: item.MedicalRecords.reason,
-                    specialtyMR: item.MedicalRecords.Specialty.specialtyName,
+                    id: item.MedicalRecord.id,
+                    medicalHistory: item.MedicalRecord.medicalHistory,
+                    reason: item.MedicalRecord.reason,
+                    specialtyMR: item.MedicalRecord.Specialty.specialtyName,
                 },
                 Patient: {
                     id: patientInfo.id,
