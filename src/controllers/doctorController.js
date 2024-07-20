@@ -12,7 +12,7 @@ const { updateAppointment } = require("../services/staffService");
 
 const postSchedule = async (req, res) => {
     try {
-        if (!req.body.create && !req.body.delete) {
+        if (!req.body.create[0].date && !req.body.delete) {
             return res.status(200).json({
                 EC: 1,
                 EM: "Missing required parameters",
@@ -141,30 +141,6 @@ const postPrescription = async (req, res) => {
         });
     }
 };
-const deleteMultiPrescription = async (req, res) => {
-    try {
-        if (!req.body) {
-            return res.status(200).json({
-                EC: 1,
-                EM: "Missing required parameters",
-                DT: "",
-            });
-        }
-        let data = await deletePrescription(req.body);
-        return res.status(200).json({
-            EC: data.EC,
-            EM: data.EM,
-            DT: data.DT,
-        });
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({
-            EC: -1,
-            EM: "error from server",
-            DT: "",
-        });
-    }
-};
 const postInvoice = async (req, res) => {
     try {
         if (!req.body) {
@@ -196,6 +172,5 @@ module.exports = {
     getAllAppointmentDoctor,
     examiningDoctor,
     postPrescription,
-    deleteMultiPrescription,
     postInvoice,
 };

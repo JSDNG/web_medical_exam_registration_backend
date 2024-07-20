@@ -12,6 +12,11 @@ const {
     getPosition,
     putSpecialtyById,
     createNewSpecialty,
+    ListOfFamousDoctors,
+    getAllDoctorfromSpecialtyById,
+    createNewMedication,
+    putMedicationById,
+    getMedication,
 } = require("../services/adminService");
 const { createDoctorSpecialty } = require("../services/doctorService");
 const register = async (req, res) => {
@@ -41,7 +46,7 @@ const register = async (req, res) => {
         let accountId = data.DT && data.DT.toString();
 
         if (accountId) {
-            let data1 = await createNewUser(req.body.fullName, accountId, req.body.accountType);
+            let data1 = await createNewUser(req.body.fullName, accountId, req.body.accountType, req.body.phone);
             return res.status(200).json({
                 EC: data1.EC,
                 EM: data1.EM,
@@ -246,7 +251,6 @@ const getOneMedicalStaff = async (req, res) => {
 };
 const putOneMedicalStaff = async (req, res) => {
     try {
-        console.log(".....", req.body);
         if (!req.body.id) {
             return res.status(200).json({
                 EC: 1,
@@ -302,7 +306,107 @@ const deleteOneMedicalStaff = async (req, res) => {
         });
     }
 };
+const getListOfFamousDoctors = async (req, res) => {
+    try {
+        let data = await ListOfFamousDoctors();
+        return res.status(200).json({
+            EC: data.EC,
+            EM: data.EM,
+            DT: data.DT,
+        });
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            EC: -1,
+            EM: "error from server",
+            DT: "",
+        });
+    }
+};
+const getAllDoctorfromSpecialty = async (req, res) => {
+    try {
+        let data = await getAllDoctorfromSpecialtyById(req.query.id);
+        return res.status(200).json({
+            EC: data.EC,
+            EM: data.EM,
+            DT: data.DT,
+        });
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            EC: -1,
+            EM: "error from server",
+            DT: "",
+        });
+    }
+};
 
+const postMedication = async (req, res) => {
+    try {
+        if (!req.body) {
+            return res.status(200).json({
+                EC: 1,
+                EM: "Missing required parameters",
+                DT: "",
+            });
+        }
+        let data = await createNewMedication(req.body);
+        return res.status(200).json({
+            EC: data.EC,
+            EM: data.EM,
+            DT: data.DT,
+        });
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            EC: -1,
+            EM: "error from server",
+            DT: "",
+        });
+    }
+};
+
+const putMedication = async (req, res) => {
+    try {
+        if (!req.body.id) {
+            return res.status(200).json({
+                EC: 1,
+                EM: "missing required params",
+                DT: "",
+            });
+        }
+        let data = await putMedicationById(req.body);
+        return res.status(200).json({
+            EC: data.EC,
+            EM: data.EM,
+            DT: data.DT,
+        });
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            EC: -1,
+            EM: "error from server",
+            DT: "",
+        });
+    }
+};
+const getAllMedication = async (req, res) => {
+    try {
+        let data = await getMedication();
+        return res.status(200).json({
+            EC: data.EC,
+            EM: data.EM,
+            DT: data.DT,
+        });
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            EC: -1,
+            EM: "error from server",
+            DT: "",
+        });
+    }
+};
 module.exports = {
     register,
     login,
@@ -316,4 +420,9 @@ module.exports = {
     getOneMedicalStaff,
     putOneMedicalStaff,
     deleteOneMedicalStaff,
+    getListOfFamousDoctors,
+    getAllDoctorfromSpecialty,
+    getAllMedication,
+    postMedication,
+    putMedication,
 };

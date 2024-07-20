@@ -22,25 +22,23 @@ const {
     getAllPosition,
     putOneSpecialty,
     postSpecialty,
+    getListOfFamousDoctors,
+    getAllDoctorfromSpecialty,
+    postMedication,
+    putMedication,
+    getAllMedication,
 } = require("../controllers/adminController");
 const {
     postAppointment,
     putMedicalRecord,
-    deleteAppointmentById,
-    deleteMedicalRecordById,
     putPatientInfo,
     getAppointment,
     getRelative,
     quickCheckUp,
-    getAllDoctorfromSpecialty,
     getAllMedicalRecordfromPatient,
 } = require("../controllers/patientController");
 
-const {
-    putAppointment,
-    getAllAppointment,
-    deleteAppointmentAndMedicalRecord,
-} = require("../controllers/staffController");
+const { putAppointment, getAllAppointment, deleteAppointment } = require("../controllers/staffController");
 const { create } = require("lodash");
 const router = express.Router();
 
@@ -55,45 +53,49 @@ const initAPIRoutes = (app) => {
     router.get("/admin/medical-staff/all", getAllMedicalStaff);
     router.get("/admin/time/all", getAllTime);
     router.get("/admin/position/all", getAllPosition);
-    router.get("/admin/specialty/all", getAllSpecialty);
+
     router.get("/medical-staff/:id", getOneMedicalStaff);
     router.put("/medical-staff", putOneMedicalStaff);
     router.delete("/medical-staff/:id", deleteOneMedicalStaff);
 
+    router.get("/admin/specialty/all", getAllSpecialty);
     router.post("/admin/specialty", postSpecialty);
     router.put("/admin/specialty", putOneSpecialty);
+
+    router.get("/admin/medication/all", getAllMedication);
+    router.post("/admin/medication", postMedication);
+    router.put("/admin/medication", putMedication);
+
+    router.get("/admin/list-of-famous-doctors", getListOfFamousDoctors);
+    router.get("/admin/all-doctor-specialty-by-id", getAllDoctorfromSpecialty);
     // Doctor
     router.get("/doctor/:id/schedule/all", getSchedule);
     router.post("/doctor/schedule", postSchedule);
     router.delete("/doctor/schedule/:id", deleteScheduleById);
+
     router.get("/doctor/appointment-from-one-doctor/all", getAllAppointmentDoctor);
     router.put("/doctor/examining-doctor", examiningDoctor);
+
+    router.post("/doctor/prescription", postPrescription);
+
+    router.post("/doctor/invoice", postInvoice);
     // Staff
     router.put("/staff/appointment", putAppointment);
     router.get("/staff/appointment/all", getAllAppointment);
-    router.delete("/staff/delete/medical-record/appointment", deleteAppointmentAndMedicalRecord);
+    router.delete("/staff/appointment/:id", deleteAppointment);
 
-    router.post("/doctor/prescription", postPrescription);
-    router.delete("/doctor/prescription", deleteMultiPrescription);
-
-    router.post("/doctor/invoice", postInvoice);
     // Patient
     router.post("/patient/appointment", postAppointment);
     //router.get("/patient/:id/appointment/all", getAppointment);
-    router.delete("/patient/appointment/:id", deleteAppointmentById);
 
     router.get("/patient/medical-record/all", getAllMedicalRecordfromPatient);
     router.put("/patient/medical-record", putMedicalRecord);
-    router.delete("/patient/medical-record/:id", deleteMedicalRecordById);
 
     router.put("/patient/information", putPatientInfo);
 
     router.post("/patient/quick-check-up", quickCheckUp);
 
     router.get("/relative/all", getRelative);
-
-    router.get("/all-doctor/specialty-by-id", getAllDoctorfromSpecialty);
-
     return app.use("/api/v1/", router);
 };
 

@@ -1,5 +1,5 @@
-const { deleteAppointment, deleteMedicalRecord } = require("../services/patientService");
-const { updateAppointment, getAllAppointmentById } = require("../services/staffService");
+const { deleteMedicalRecord } = require("../services/patientService");
+const { updateAppointment, getAllAppointmentById, deleteAppointmentById } = require("../services/staffService");
 
 const putAppointment = async (req, res) => {
     try {
@@ -44,22 +44,13 @@ const getAllAppointment = async (req, res) => {
     }
 };
 
-const deleteAppointmentAndMedicalRecord = async (req, res) => {
+const deleteAppointment = async (req, res) => {
     try {
-        console.log(req.body.medicalRecordId);
-        let data = await deleteMedicalRecord(req.body.medicalRecordId);
-        if (data.EC !== 0) {
-            return res.status(200).json({
-                EC: data.EC,
-                EM: data.EM,
-                DT: data.DT,
-            });
-        }
-        let result = await deleteAppointment(req.body.appointmentId);
+        let data = await deleteAppointmentById(req.params.id);
         return res.status(200).json({
-            EC: result.EC,
-            EM: result.EM,
-            DT: result.DT,
+            EC: data.EC,
+            EM: data.EM,
+            DT: data.DT,
         });
     } catch (err) {
         console.log(err);
@@ -73,5 +64,5 @@ const deleteAppointmentAndMedicalRecord = async (req, res) => {
 module.exports = {
     putAppointment,
     getAllAppointment,
-    deleteAppointmentAndMedicalRecord,
+    deleteAppointment,
 };

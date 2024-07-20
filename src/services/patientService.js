@@ -202,17 +202,7 @@ const getAllAppointment = async (id) => {
                     include: [
                         {
                             model: db.MedicalStaff,
-                            attributes: [
-                                "id",
-                                "fullName",
-                                "image",
-                                "dateOfBirth",
-                                "gender",
-                                "phone",
-                                "description",
-                                "price",
-                                "address",
-                            ],
+                            attributes: ["id", "fullName", "image", "gender", "phone", "description", "price"],
                         },
                         {
                             model: db.PeriodOfTime,
@@ -235,60 +225,6 @@ const getAllAppointment = async (id) => {
             EC: 0,
             EM: "Get the Appointment list",
             DT: data,
-        };
-    } catch (err) {
-        console.log(err);
-        return {
-            EC: -1,
-            EM: "Something went wrong in service...",
-            DT: "",
-        };
-    }
-};
-const deleteAppointment = async (id) => {
-    try {
-        console.log(id);
-        if (!id) {
-            return {
-                EC: 1,
-                EM: "No Appointments to delete",
-                DT: "",
-            };
-        }
-        await db.Appointment.destroy({
-            where: { id: id },
-        });
-        return {
-            EC: 0,
-            EM: "Deleted 1",
-            DT: "",
-        };
-    } catch (err) {
-        console.log(err);
-        return {
-            EC: -1,
-            EM: "Something went wrong in service...",
-            DT: "",
-        };
-    }
-};
-const deleteMedicalRecord = async (id) => {
-    try {
-        console.log(id);
-        if (!id) {
-            return {
-                EC: 1,
-                EM: "No medical record to delete",
-                DT: "",
-            };
-        }
-        await db.MedicalRecord.destroy({
-            where: { id: id },
-        });
-        return {
-            EC: 0,
-            EM: "Deleted",
-            DT: "",
         };
     } catch (err) {
         console.log(err);
@@ -506,70 +442,6 @@ const getOneRelative = async (id) => {
     }
 };
 
-const getAllDoctorfromSpecialtyById = async (id) => {
-    try {
-        let result = await db.Specialty.findOne({
-            where: { id: id },
-            attributes: ["id", "specialtyName", "description", "image"],
-            include: [
-                {
-                    model: db.MedicalStaff,
-                    attributes: [
-                        "id",
-                        "fullName",
-                        "image",
-                        "dateOfBirth",
-                        "gender",
-                        "phone",
-                        "description",
-                        "price",
-                        "address",
-                    ],
-                    through: { attributes: [] },
-                    include: [
-                        {
-                            model: db.Specialty,
-                            attributes: ["id", "specialtyName", "description"],
-                            through: { attributes: [] },
-                        },
-                        {
-                            model: db.Position,
-                            attributes: ["id", "positionName"],
-                        },
-                        
-                    ],
-                },
-            ],
-        });
-
-        if (result.image) {
-            result.image = Buffer.from(result.image, "binary").toString("base64");
-        }
-
-        result = result.get({ plain: true });
-
-        if (result.MedicalStaffs && result.MedicalStaffs.length > 0) {
-            result.MedicalStaffs.forEach((item) => {
-                item.dateOfBirth = item.dateOfBirth ? item.dateOfBirth.toISOString().split("T")[0] : null;
-                if (item.image) {
-                    item.image = Buffer.from(item.image, "binary").toString("base64");
-                }
-            });
-        }
-        return {
-            EC: 0,
-            EM: "Get All doctor from specialty",
-            DT: result,
-        };
-    } catch (err) {
-        console.log(err);
-        return {
-            EC: -1,
-            EM: "Something wrongs in service... ",
-            DT: "",
-        };
-    }
-};
 const getAllMedicalRecordfromPatientById = async (rawData) => {
     try {
         const data = await db.MedicalRecord.findAll({
@@ -620,16 +492,16 @@ const getAllMedicalRecordfromPatientById = async (rawData) => {
 
                 {
                     model: db.MedicalStaff,
-                    attributes: ["id", "fullName", "dateOfBirth", "gender", "phone", "address"],
+                    attributes: ["id", "fullName", "gender", "phone", "price"],
                 },
-                {
-                    model: db.Prescription,
-                    attributes: ["id", "medicationName", "price", "quantity", "instruction"],
-                },
-                {
-                    model: db.Invoice,
-                    attributes: ["id", "totalPrice", "dateCreated"],
-                },
+                // {
+                //     model: db.Prescription,
+                //     attributes: ["id", "medicationName", "price", "quantity", "instruction"],
+                // },
+                // {
+                //     model: db.Invoice,
+                //     attributes: ["id", "totalPrice", "dateCreated"],
+                // },
             ],
             raw: true,
             nest: true,
@@ -668,12 +540,9 @@ const getAllMedicalRecordfromPatientById = async (rawData) => {
                 time: record.Appointment.Schedule.PeriodOfTime.time,
                 MedicalStaff: {
                     fullName: record.MedicalStaff.fullName,
-                    dateOfBirth: record.MedicalStaff.dateOfBirth
-                        ? record.MedicalStaff.dateOfBirth.toISOString().split("T")[0]
-                        : null,
                     gender: record.MedicalStaff.gender,
                     phone: record.MedicalStaff.phone,
-                    address: record.MedicalStaff.address,
+                    price: record.MedicalStaff.price,
                 },
                 Prescriptions: record.Prescriptions[0].id ? record.Prescriptions : null,
                 Invoice: record.Invoices.id ? record.Invoices : null,
@@ -730,17 +599,14 @@ const getAllMedicalRecordfromPatientById = async (rawData) => {
 module.exports = {
     createAppointment,
     getAllAppointment,
-    deleteAppointment,
     createMedicalRecord,
     getAllRelative,
     createNewRelative,
     deleteRelative,
-    deleteMedicalRecord,
     putMedicalRecordById,
     putPatientInfoById,
     findSchedudeForPatient,
     getOnePatient,
     getOneRelative,
-    getAllDoctorfromSpecialtyById,
     getAllMedicalRecordfromPatientById,
 };

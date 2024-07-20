@@ -2,6 +2,8 @@ const db = require("../models");
 const _ = require("lodash");
 const { reduce } = require("lodash");
 const { Op } = require("sequelize");
+const Sequelize = require("sequelize");
+const prescription = require("../models/prescription");
 const checkUserId = async (id) => {
     let userId = await db.MedicalStaff.findOne({
         where: { id: id },
@@ -373,13 +375,71 @@ const createDoctorSpecialty = async (rawData, id) => {
 };
 const createPrescription = async (rawData) => {
     try {
-        let data = await db.Prescription.bulkCreate(rawData);
-        let total = data.reduce((acc, item) => acc + item.price * item.quantity, 0);
+        let result = await db.Prescription.create({
+            doctorId: rawData.doctorId,
+            recordId: rawData.recordId,
+        });
+        rawData.prescriptionDetail = rawData.prescriptionDetail.map((item) => ({
+            ...item,
+            prescriptionId: result.id,
+        }));
+        await db.PrescriptionDetail.bulkCreate(rawData.prescriptionDetail);
+        const [medicalRecord, prescription] = await Promise.all([
+            db.MedicalRecord.findOne({
+                where: { id: rawData.recordId },
+                attributes: ["id", "diagnosis"],
+                include: [
+                    {
+                        model: db.Specialty,
+                        attributes: ["id", "specialtyName"],
+                    },
+                    {
+                        model: db.MedicalStaff,
+                        attributes: ["id", "fullName", "price"],
+                    },
+                ],
+            }),
+            db.Prescription.findOne({
+                where: { id: result.id },
+                attributes: ["id"],
+                include: [
+                    {
+                        model: db.Medication,
+                        attributes: ["id", "medicationName", "description", "price"],
+                        through: { attributes: ["instruction", "quantity"] },
+                    },
+                ],
+            }),
+        ]);
+
+        if (!medicalRecord || !prescription) {
+            throw new Error("Medical record or prescription not found");
+        }
+
+        const medications = prescription.Medications.map((item) => ({
+            medicationName: item.medicationName,
+            price: item.price,
+            instruction: item.PrescriptionDetail.instruction,
+            quantity: item.PrescriptionDetail.quantity,
+        }));
+
+        const total =
+            parseFloat(medicalRecord.MedicalStaff.price.replace(".", ""), 10) +
+            medications.reduce((acc, item) => acc + parseInt(item.price.replace(".", ""), 10) * item.quantity, 0);
         console.log(total);
+        const result1 = {
+            medicalRecord: {
+                diagnosis: medicalRecord.diagnosis,
+                specialtyMR: medicalRecord.Specialty.specialtyName,
+                doctor: medicalRecord.MedicalStaff.fullName,
+            },
+            medications,
+            total: total.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."),
+        };
         return {
             EC: 0,
             EM: "Prescription created successfully",
-            DT: total,
+            DT: result1,
         };
     } catch (err) {
         console.error(err);
@@ -390,29 +450,7 @@ const createPrescription = async (rawData) => {
         };
     }
 };
-const deletePrescription = async (rawData) => {
-    try {
-        await db.Prescription.destroy({
-            where: {
-                id: {
-                    [Op.in]: rawData,
-                },
-            },
-        });
-        return {
-            EC: 0,
-            EM: "Deleted",
-            DT: "",
-        };
-    } catch (err) {
-        console.log(err);
-        return {
-            EC: -1,
-            EM: "Something went wrong in service...",
-            DT: "",
-        };
-    }
-};
+
 const createInvoice = async (rawData) => {
     try {
         console.log(rawData);
@@ -444,6 +482,5 @@ module.exports = {
     getAllAppointmentfromOneDoctor,
     createDoctorSpecialty,
     createPrescription,
-    deletePrescription,
     createInvoice,
 };

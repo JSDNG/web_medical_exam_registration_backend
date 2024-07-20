@@ -12,10 +12,13 @@ module.exports = (sequelize, DataTypes) => {
             MedicalRecord.belongsTo(models.MedicalStaff, { foreignKey: "doctorId" });
             MedicalRecord.belongsTo(models.Patient, { foreignKey: "patientId" });
             MedicalRecord.belongsTo(models.Relative, { foreignKey: "relativeId" });
-            MedicalRecord.hasMany(models.Prescription, { foreignKey: "recordId" });
+            MedicalRecord.hasOne(models.Prescription, { foreignKey: "recordId" });
             MedicalRecord.hasMany(models.Invoice, { foreignKey: "recordId" });
-            MedicalRecord.belongsTo(models.Appointment, { foreignKey: "appointmentId" ,onDelete: 'CASCADE',
-                hooks: true});
+            MedicalRecord.belongsTo(models.Appointment, {
+                foreignKey: "appointmentId",
+                onDelete: "CASCADE",
+                hooks: true,
+            });
             MedicalRecord.belongsTo(models.AllStatus, { foreignKey: "statusId" });
             MedicalRecord.belongsTo(models.Specialty, { foreignKey: "specialtyId" });
         }

@@ -12,7 +12,7 @@ module.exports = (sequelize, DataTypes) => {
             Appointment.belongsTo(models.Schedule, { foreignKey: "scheduleId" });
             Appointment.belongsTo(models.MedicalStaff, { foreignKey: "staffId" });
             Appointment.belongsTo(models.Patient, { foreignKey: "patientId" });
-            Appointment.hasMany(models.MedicalRecord, {
+            Appointment.hasOne(models.MedicalRecord, {
                 foreignKey: "appointmentId",
                 onDelete: "CASCADE",
                 hooks: true,

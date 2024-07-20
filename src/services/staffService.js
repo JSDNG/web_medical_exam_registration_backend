@@ -6,7 +6,6 @@ const { sendEmailAppointment } = require("./emailService");
 
 const updateAppointment = async (rawData) => {
     try {
-        console.log("1", rawData);
         await db.Appointment.update(
             {
                 statusId: rawData.statusId,
@@ -27,7 +26,7 @@ const updateAppointment = async (rawData) => {
                     include: [
                         {
                             model: db.MedicalStaff,
-                            attributes: ["fullName", "phone", "price", "address"],
+                            attributes: ["fullName", "gender", "phone", "price"],
                         },
                         {
                             model: db.PeriodOfTime,
@@ -148,12 +147,10 @@ const getAllAppointmentById = async (id) => {
                             attributes: [
                                 "id",
                                 "fullName",
-                                "dateOfBirth",
                                 "gender",
                                 "phone",
                                 "description",
                                 "price",
-                                "address",
                             ],
                         },
                         {
@@ -226,7 +223,35 @@ const getAllAppointmentById = async (id) => {
     }
 };
 
+const deleteAppointmentById = async (id) => {
+    try {
+        console.log(id);
+        if (!id) {
+            return {
+                EC: 1,
+                EM: "No Appointments to delete",
+                DT: "",
+            };
+        }
+        await db.Appointment.destroy({
+            where: { id: id },
+        });
+        return {
+            EC: 0,
+            EM: "Appointments deleted",
+            DT: "",
+        };
+    } catch (err) {
+        console.log(err);
+        return {
+            EC: -1,
+            EM: "Something went wrong in service...",
+            DT: "",
+        };
+    }
+};
 module.exports = {
     updateAppointment,
     getAllAppointmentById,
+    deleteAppointmentById,
 };
