@@ -6,7 +6,7 @@ const { toDefaultValue } = require("sequelize/lib/utils");
 module.exports = {
     async up(queryInterface, Sequelize) {
         await queryInterface.createTable(
-            "MedicalStaff",
+            "PrescriptionDetail",
             {
                 id: {
                     allowNull: false,
@@ -14,37 +14,25 @@ module.exports = {
                     primaryKey: true,
                     type: Sequelize.INTEGER,
                 },
-                fullName: {
+                instruction: {
                     type: Sequelize.STRING,
                 },
-                image: {
-                    type: Sequelize.BLOB,
+                quantity: {
+                    type: Sequelize.INTEGER,
                 },
-                gender: {
-                    type: Sequelize.STRING,
-                },
-                phone: {
-                    type: Sequelize.STRING,
-                },
-                description: {
-                    type: Sequelize.STRING,
-                },
-                price: {
-                    type: Sequelize.STRING,
-                },
-                accountId: {
+                medicationId: {
                     type: Sequelize.INTEGER,
                     allowNull: false,
                     references: {
-                        model: "Account",
+                        model: "Medication",
                         key: "id",
                     },
                 },
-                positionId: {
+                prescriptionId: {
                     type: Sequelize.INTEGER,
-                    allowNull: true,
+                    allowNull: false,
                     references: {
-                        model: "Position",
+                        model: "Prescription",
                         key: "id",
                     },
                 },
@@ -64,6 +52,6 @@ module.exports = {
         );
     },
     async down(queryInterface, Sequelize) {
-        await queryInterface.dropTable("MedicalStaff");
+        await queryInterface.dropTable("PrescriptionDetail");
     },
 };

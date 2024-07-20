@@ -14,11 +14,8 @@ module.exports = {
                     primaryKey: true,
                     type: Sequelize.INTEGER,
                 },
-                totalPrice: {
-                    type: Sequelize.STRING,
-                },
-                dateCreated: {
-                    type: Sequelize.DATE,
+                file: {
+                    type: Sequelize.BLOB,
                 },
                 doctorId: {
                     type: Sequelize.INTEGER,

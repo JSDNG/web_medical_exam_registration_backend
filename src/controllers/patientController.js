@@ -2,8 +2,6 @@ const { getMedicalStaffById, getOneSpecialty } = require("../services/adminServi
 const {
     getAllAppointment,
     createAppointment,
-    deleteAppointment,
-    deleteMedicalRecord,
     createMedicalRecord,
     putMedicalRecordById,
     putPatientInfoById,
@@ -13,7 +11,6 @@ const {
     findSchedudeForPatient,
     getOnePatient,
     getOneRelative,
-    getAllDoctorfromSpecialtyById,
     getAllMedicalRecordfromPatientById,
 } = require("../services/patientService");
 
@@ -87,41 +84,6 @@ const postAppointment = async (req, res) => {
 const getAppointment = async (req, res) => {
     try {
         let data = await getAllAppointment(req.params.id);
-        return res.status(200).json({
-            EC: data.EC,
-            EM: data.EM,
-            DT: data.DT,
-        });
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({
-            EC: -1,
-            EM: "error from server",
-            DT: "",
-        });
-    }
-};
-const deleteAppointmentById = async (req, res) => {
-    try {
-        let data = await deleteAppointment(req.params.id);
-        return res.status(200).json({
-            EC: data.EC,
-            EM: data.EM,
-            DT: data.DT,
-        });
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({
-            EC: -1,
-            EM: "error from server",
-            DT: "",
-        });
-    }
-};
-
-const deleteMedicalRecordById = async (req, res) => {
-    try {
-        let data = await deleteMedicalRecord(req.params.id);
         return res.status(200).json({
             EC: data.EC,
             EM: data.EM,
@@ -339,23 +301,7 @@ const quickCheckUp = async (req, res) => {
         });
     }
 };
-const getAllDoctorfromSpecialty = async (req, res) => {
-    try {
-        let data = await getAllDoctorfromSpecialtyById(req.query.id);
-        return res.status(200).json({
-            EC: data.EC,
-            EM: data.EM,
-            DT: data.DT,
-        });
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({
-            EC: -1,
-            EM: "error from server",
-            DT: "",
-        });
-    }
-};
+
 const getAllMedicalRecordfromPatient = async (req, res) => {
     try {
         let data = await getAllMedicalRecordfromPatientById(req.query);
@@ -376,13 +322,10 @@ const getAllMedicalRecordfromPatient = async (req, res) => {
 module.exports = {
     postAppointment,
     getAppointment,
-    deleteAppointmentById,
-    deleteMedicalRecordById,
     postMedicalRecord,
     putMedicalRecord,
     putPatientInfo,
     getRelative,
     quickCheckUp,
-    getAllDoctorfromSpecialty,
     getAllMedicalRecordfromPatient,
 };

@@ -24,7 +24,7 @@ const sendEmailAppointment = async (data) => {
             <div><b>Số thứ tự khám: ${data.appointmentNumber}, Thời gian: ${data.time}, ${data.date}</b></div>
             <p>Thông tin bác sĩ:</p>
             <div><b>Bác sĩ: ${data.MedicalStaff.fullName}, Số điện thoại: ${data.MedicalStaff.phone}, Giá khám: ${data.MedicalStaff.price} đ</b></div>
-            <div><b>Địa chỉ phòng khám: ${data.MedicalStaff.address}</b></div>
+            <div><b>Địa chỉ phòng khám: 97 Man Thiện, phường Hiệp Phú, TP Thủ Đức</b></div>
             <p>Vui lòng bệnh nhân đến khám đúng giờ, Xin chân thành cảm ơn!</p>
             `,
         };

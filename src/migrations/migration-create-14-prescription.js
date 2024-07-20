@@ -14,18 +14,6 @@ module.exports = {
                     primaryKey: true,
                     type: Sequelize.INTEGER,
                 },
-                medicationName: {
-                    type: Sequelize.STRING,
-                },
-                price: {
-                    type: Sequelize.STRING,
-                },
-                quantity: {
-                    type: Sequelize.INTEGER,
-                },
-                instruction: {
-                    type: Sequelize.STRING,
-                },
                 doctorId: {
                     type: Sequelize.INTEGER,
                     allowNull: false,
