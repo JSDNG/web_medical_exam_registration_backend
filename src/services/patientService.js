@@ -4,6 +4,7 @@ const { reduce } = require("lodash");
 const { Op } = require("sequelize");
 const Sequelize = require("sequelize");
 const { getAllSchedule } = require("./doctorService");
+const { getAllScheduleByDoctor } = require("./adminService");
 const checkUser = async (id) => {
     let userId = await db.Patient.findOne({
         where: { id: id },
@@ -299,11 +300,12 @@ const putPatientInfoById = async (rawData) => {
         };
     }
 };
-const findSchedudeForPatient = async (date) => {
+const findSchedudeForPatient = async (date, specialty) => {
     try {
+        // Thiếu chuyên khoa
         const [datePart, timePart] = date.split(" ");
-        let data = await getAllSchedule();
-
+        let data = await getAllScheduleByDoctor(specialty);
+        
         // Lọc các lịch trình theo điều kiện Appointment
         data.DT.forEach((entry) => {
             entry.schedules = entry.schedules.filter((schedule) => {

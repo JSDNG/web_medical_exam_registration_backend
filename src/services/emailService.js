@@ -39,7 +39,45 @@ const sendEmailAppointment = async (data) => {
         };
     }
 };
-
+const sendEmailInvoice = async (data) => {
+    try {
+        const transporter = nodemailer.createTransport({
+            host: "smtp.gmail.com",
+            port: 587,
+            secure: false, // Use `true` for port 465, `false` for all other ports
+            auth: {
+                user: process.env.EMAIL_APP,
+                pass: process.env.EMAIL_APP_PASSWORD,
+            },
+        });
+        let message = {
+            from: '"Bookingcare 👻" <tranducquynh00000@gmail.com>',
+            to: data.email,
+            subject: "Kết quả khám bệnh",
+            html: `
+            <h3>Xin chào ${data.patientName}</h3>
+            <p>Bạn nhận được email này vì đã khám bệnh tại Bookingcare.</p>
+            <p>Thông tin đơn thuốc/hóa đơn được gửi trong file đính kèm.</p>
+            <p>Xin chân thành cảm ơn!</p>
+            `,
+            attachments: [
+                {
+                    path: data.file,
+                },
+            ],
+        };
+        const info = await transporter.sendMail(message);
+        return info;
+    } catch (err) {
+        console.log(err);
+        return {
+            EC: -1,
+            EM: "Something wrongs in service...",
+            DT: "",
+        };
+    }
+};
 module.exports = {
     sendEmailAppointment,
+    sendEmailInvoice,
 };

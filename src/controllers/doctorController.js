@@ -6,6 +6,7 @@ const {
     createPrescription,
     deletePrescription,
     createInvoice,
+    getAllInvoiceByDoctorId,
 } = require("../services/doctorService");
 const { putMedicalRecordById } = require("../services/patientService");
 const { updateAppointment } = require("../services/staffService");
@@ -150,7 +151,25 @@ const postInvoice = async (req, res) => {
                 DT: "",
             });
         }
+        console.log("1 >>>", req.body);
         let data = await createInvoice(req.body);
+        return res.status(200).json({
+            EC: data.EC,
+            EM: data.EM,
+            DT: data.DT,
+        });
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            EC: -1,
+            EM: "error from server",
+            DT: "",
+        });
+    }
+};
+const getAllInvoice = async (req, res) => {
+    try {
+        let data = await getAllInvoiceByDoctorId(req.query.id);
         return res.status(200).json({
             EC: data.EC,
             EM: data.EM,
@@ -173,4 +192,5 @@ module.exports = {
     examiningDoctor,
     postPrescription,
     postInvoice,
+    getAllInvoice,
 };

@@ -4,6 +4,7 @@ const { reduce } = require("lodash");
 const { Op } = require("sequelize");
 const Sequelize = require("sequelize");
 const prescription = require("../models/prescription");
+const { sendEmailInvoice } = require("./emailService");
 const checkUserId = async (id) => {
     let userId = await db.MedicalStaff.findOne({
         where: { id: id },
@@ -302,9 +303,9 @@ const getAllAppointmentfromOneDoctor = async (id) => {
                 date: item.date,
                 data: item.data.map((item) => {
                     let patientInfo =
-                        item.MedicalRecords.Relative.id !== null
-                            ? item.MedicalRecords.Relative
-                            : item.MedicalRecords.Patient;
+                        item.MedicalRecord.Relative.id !== null
+                            ? item.MedicalRecord.Relative
+                            : item.MedicalRecord.Patient;
                     let items = {
                         id: item.id,
                         appointmentNumber: item.appointmentNumber,
@@ -312,12 +313,12 @@ const getAllAppointmentfromOneDoctor = async (id) => {
                         price: item.Schedule.MedicalStaff.price,
                         time: item.Schedule.PeriodOfTime.time,
                         MedicalRecord: {
-                            id: item.MedicalRecords.id,
-                            medicalHistory: item.MedicalRecords.medicalHistory,
-                            reason: item.MedicalRecords.reason,
-                            diagnosis: item.MedicalRecords.diagnosis,
-                            statusMR: item.MedicalRecords.AllStatus.statusName,
-                            specialtyMR: item.MedicalRecords.Specialty.specialtyName,
+                            id: item.MedicalRecord.id,
+                            medicalHistory: item.MedicalRecord.medicalHistory,
+                            reason: item.MedicalRecord.reason,
+                            diagnosis: item.MedicalRecord.diagnosis,
+                            statusMR: item.MedicalRecord.AllStatus.statusName,
+                            specialtyMR: item.MedicalRecord.Specialty.specialtyName,
                         },
                         Patient: {
                             id: patientInfo.id,
@@ -453,17 +454,16 @@ const createPrescription = async (rawData) => {
 
 const createInvoice = async (rawData) => {
     try {
-        console.log(rawData);
         let data = await db.Invoice.create({
-            totalPrice: DataTypes.STRING,
-            dateCreated: DataTypes.DATE,
-            doctorId: DataTypes.INTEGER,
-            recordId: DataTypes.INTEGER,
+            file: rawData.file,
+            doctorId: rawData.doctorId,
+            recordId: rawData.recordId,
         });
+        await sendEmailInvoice(rawData);
         return {
             EC: 0,
             EM: "Invoice created successfully",
-            DT: data,
+            DT: "data",
         };
     } catch (err) {
         console.error(err);
@@ -474,7 +474,36 @@ const createInvoice = async (rawData) => {
         };
     }
 };
-
+const getAllInvoiceByDoctorId = async (id) => {
+    try {
+        // Lấy dữ liệu từ cơ sở dữ liệu
+        let data = await db.Invoice.findAll({
+            where: { doctorId: id },
+            attributes: ["id", "recordId"],
+            raw: true,
+            nest: true,
+        });
+        if (!data || data.length === 0) {
+            return {
+                EC: 0,
+                EM: "No invoice found",
+                DT: [],
+            };
+        }
+        return {
+            EC: 0,
+            EM: "Get the Invoice list",
+            DT: data,
+        };
+    } catch (err) {
+        console.log(err);
+        return {
+            EC: -1,
+            EM: "Something went wrong in service...",
+            DT: "",
+        };
+    }
+};
 module.exports = {
     createSchedule,
     getAllSchedule,
@@ -483,4 +512,5 @@ module.exports = {
     createDoctorSpecialty,
     createPrescription,
     createInvoice,
+    getAllInvoiceByDoctorId,
 };
