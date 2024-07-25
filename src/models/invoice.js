@@ -15,7 +15,7 @@ module.exports = (sequelize, DataTypes) => {
     }
     Invoice.init(
         {
-            file: DataTypes.BLOB,
+            file: DataTypes.BLOB("long"),
             doctorId: DataTypes.INTEGER,
             recordId: DataTypes.INTEGER,
         },

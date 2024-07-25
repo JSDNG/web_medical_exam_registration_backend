@@ -1,13 +1,12 @@
 const {
     registerAccount,
-    loginAccount,
+    loginWithLocal,
     createNewUser,
     getTime,
     getSpecialty,
     getMedicalStaff,
     getMedicalStaffById,
     putMedicalStaffById,
-    deleteMedicalStaffById,
     deleteDoctorSpecialtyById,
     getPosition,
     putSpecialtyById,
@@ -17,10 +16,8 @@ const {
     createNewMedication,
     putMedicationById,
     getMedication,
-    getAllScheduleByDoctor,
 } = require("../services/adminService");
 const { createDoctorSpecialty } = require("../services/doctorService");
-const { findSchedudeForPatient } = require("../services/patientService");
 const register = async (req, res) => {
     try {
         if (!req.body.email || !req.body.password || !req.body.fullName || !req.body.roleId || !req.body.accountType) {
@@ -73,7 +70,7 @@ const login = async (req, res) => {
                 DT: "",
             });
         }
-        let data = await loginAccount(req.body);
+        let data = await loginWithLocal(req.body);
         // set cookie
         if (data && data.DT && data.DT.access_token) {
             res.cookie("jwt", data.DT.access_token, { httpOnly: true, maxAge: 60 * 60 * 1000 });
@@ -236,7 +233,7 @@ const putOneSpecialty = async (req, res) => {
 };
 const getOneMedicalStaff = async (req, res) => {
     try {
-        let data = await getMedicalStaffById(req.params.id);
+        let data = await getMedicalStaffById(req.query.id);
         return res.status(200).json({
             EC: data.EC,
             EM: data.EM,
@@ -270,35 +267,6 @@ const putOneMedicalStaff = async (req, res) => {
             EM: data.EM,
             DT: data.DT,
         });
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({
-            EC: -1,
-            EM: "error from server",
-            DT: "",
-        });
-    }
-};
-const deleteOneMedicalStaff = async (req, res) => {
-    try {
-        if (!req.params.id) {
-            return res.status(200).json({
-                EC: 1,
-                EM: "missing required params",
-                DT: "",
-            });
-        } else {
-            // let data = await deleteDoctorSpecialtyById(req.params.id);
-            // let data1 = await deleteCardByStudySetId(req.params.id);
-            // if (data1 && data1.EC === 0) {
-            //     let data = await deleteStudySetById(req.params.id);
-            //     return res.status(200).json({
-            //         EC: data.EC,
-            //         EM: data.EM,
-            //         DT: data.DT,
-            //     });
-            // }
-        }
     } catch (err) {
         console.log(err);
         res.status(500).json({
@@ -421,7 +389,6 @@ module.exports = {
     putOneSpecialty,
     getOneMedicalStaff,
     putOneMedicalStaff,
-    deleteOneMedicalStaff,
     getListOfFamousDoctors,
     getAllDoctorfromSpecialty,
     getAllMedication,

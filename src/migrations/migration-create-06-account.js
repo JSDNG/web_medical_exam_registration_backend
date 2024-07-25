@@ -13,12 +13,24 @@ module.exports = {
                 type: Sequelize.INTEGER,
             },
             email: {
+                allowNull: false,
                 type: Sequelize.STRING,
             },
             password: {
                 type: Sequelize.STRING,
             },
             accountType: {
+                type: Sequelize.STRING,
+            },
+            authGoogleId: {
+                type: Sequelize.STRING,
+                defaultValue: null,
+            },
+            authType: {
+                type: Sequelize.STRING,
+                defaultValue: "local",
+            },
+            refreshToken: {
                 type: Sequelize.STRING,
             },
             roleId: {

@@ -14,16 +14,6 @@ const checkUserId = async (id) => {
     }
     return false;
 };
-// const checkUsername = async (username) => {
-//     let user = await db.MedicalStaff.findOne({
-//         where: { fullName: username },
-//     });
-
-//     if (user) {
-//         return true;
-//     }
-//     return false;
-// };
 const createSchedule = async (rawData) => {
     try {
         // Lấy thông tin lịch hiện tại từ cơ sở dữ liệu
@@ -156,6 +146,7 @@ const getAllSchedule = async (id) => {
 };
 const deleteSchedule = async (rawData) => {
     try {
+        console.log(rawData);
         if (!rawData || rawData.length === 0) {
             return {
                 EC: 1,
@@ -163,39 +154,19 @@ const deleteSchedule = async (rawData) => {
                 DT: "",
             };
         }
-
-        if (rawData.length === 1) {
-            let data = await db.Appointment.findOne({
-                where: { scheduleId: rawData[0] },
-            });
-            if (data) {
-                return {
-                    EC: 1,
-                    EM: "Cannot delete schedule",
-                    DT: "",
-                };
-            } else {
-                return {
-                    EC: 0,
-                    EM: "Can delete schedule",
-                    DT: "",
-                };
-            }
-        } else {
-            await db.Schedule.destroy({
-                where: {
-                    id: {
-                        [Op.in]: rawData,
-                    },
+        await db.Schedule.destroy({
+            where: {
+                id: {
+                    [Op.in]: rawData,
                 },
-            });
+            },
+        });
 
-            return {
-                EC: 0,
-                EM: "Deleted",
-                DT: "",
-            };
-        }
+        return {
+            EC: 0,
+            EM: "Deleted",
+            DT: "",
+        };
     } catch (err) {
         console.log(err);
         return {
@@ -454,8 +425,9 @@ const createPrescription = async (rawData) => {
 
 const createInvoice = async (rawData) => {
     try {
+        const binaryData = Buffer.from(rawData.file, "base64");
         let data = await db.Invoice.create({
-            file: rawData.file,
+            file: binaryData,
             doctorId: rawData.doctorId,
             recordId: rawData.recordId,
         });
@@ -504,6 +476,34 @@ const getAllInvoiceByDoctorId = async (id) => {
         };
     }
 };
+const putMedicalRecordById = async (rawData) => {
+    try {
+        console.log(rawData);
+        await db.MedicalRecord.update(
+            {
+                medicalHistory: rawData.medicalHistory,
+                reason: rawData.reason,
+                diagnosis: rawData.diagnosis,
+                statusId: rawData.statusId,
+            },
+            {
+                where: { id: rawData.id },
+            }
+        );
+        return {
+            EC: 0,
+            EM: "Medical Record updated successfully",
+            DT: "",
+        };
+    } catch (err) {
+        console.log(err);
+        return {
+            EC: -1,
+            EM: "Something wrongs in service... ",
+            DT: "",
+        };
+    }
+};
 module.exports = {
     createSchedule,
     getAllSchedule,
@@ -513,4 +513,5 @@ module.exports = {
     createPrescription,
     createInvoice,
     getAllInvoiceByDoctorId,
+    putMedicalRecordById,
 };

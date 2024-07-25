@@ -3,7 +3,6 @@ const _ = require("lodash");
 const { reduce } = require("lodash");
 const { Op } = require("sequelize");
 const Sequelize = require("sequelize");
-const { getAllSchedule } = require("./doctorService");
 const { getAllScheduleByDoctor } = require("./adminService");
 const checkUser = async (id) => {
     let userId = await db.Patient.findOne({
@@ -156,32 +155,6 @@ const createNewRelative = async (rawData) => {
         };
     }
 };
-const deleteRelative = async (id) => {
-    try {
-        if (!id) {
-            return {
-                EC: 1,
-                EM: "No Relative to delete",
-                DT: "",
-            };
-        }
-        await db.Relative.destroy({
-            where: { id: id },
-        });
-        return {
-            EC: 0,
-            EM: "Deleted",
-            DT: "",
-        };
-    } catch (err) {
-        console.log(err);
-        return {
-            EC: -1,
-            EM: "Something went wrong in service...",
-            DT: "",
-        };
-    }
-};
 const getAllAppointment = async (id) => {
     try {
         // Lấy dữ liệu từ cơ sở dữ liệu
@@ -236,34 +209,6 @@ const getAllAppointment = async (id) => {
         };
     }
 };
-const putMedicalRecordById = async (rawData) => {
-    try {
-        console.log(rawData);
-        await db.MedicalRecord.update(
-            {
-                medicalHistory: rawData.medicalHistory,
-                reason: rawData.reason,
-                diagnosis: rawData.diagnosis,
-                statusId: rawData.statusId,
-            },
-            {
-                where: { id: rawData.id },
-            }
-        );
-        return {
-            EC: 0,
-            EM: "Medical Record updated successfully",
-            DT: "",
-        };
-    } catch (err) {
-        console.log(err);
-        return {
-            EC: -1,
-            EM: "Something wrongs in service... ",
-            DT: "",
-        };
-    }
-};
 const putPatientInfoById = async (rawData) => {
     try {
         let isUser = await checkUser(rawData.id);
@@ -305,7 +250,7 @@ const findSchedudeForPatient = async (date, specialty) => {
         // Thiếu chuyên khoa
         const [datePart, timePart] = date.split(" ");
         let data = await getAllScheduleByDoctor(specialty);
-        
+
         // Lọc các lịch trình theo điều kiện Appointment
         data.DT.forEach((entry) => {
             entry.schedules = entry.schedules.filter((schedule) => {
@@ -546,8 +491,8 @@ const getAllMedicalRecordfromPatientById = async (rawData) => {
                     phone: record.MedicalStaff.phone,
                     price: record.MedicalStaff.price,
                 },
-                Prescriptions: record.Prescriptions[0].id ? record.Prescriptions : null,
-                Invoice: record.Invoices.id ? record.Invoices : null,
+                //Prescriptions: record.Prescriptions[0].id ? record.Prescriptions : null,
+                //Invoice: record.Invoices.id ? record.Invoices : null,
             };
 
             if (record.Relative && record.Relative.id) {
@@ -604,8 +549,6 @@ module.exports = {
     createMedicalRecord,
     getAllRelative,
     createNewRelative,
-    deleteRelative,
-    putMedicalRecordById,
     putPatientInfoById,
     findSchedudeForPatient,
     getOnePatient,

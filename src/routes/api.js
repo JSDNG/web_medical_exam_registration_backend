@@ -18,7 +18,6 @@ const {
     getAllSpecialty,
     getOneMedicalStaff,
     putOneMedicalStaff,
-    deleteOneMedicalStaff,
     getAllPosition,
     putOneSpecialty,
     postSpecialty,
@@ -30,7 +29,6 @@ const {
 } = require("../controllers/adminController");
 const {
     postAppointment,
-    putMedicalRecord,
     putPatientInfo,
     getAppointment,
     getRelative,
@@ -39,24 +37,37 @@ const {
 } = require("../controllers/patientController");
 
 const { putAppointment, getAllAppointment, deleteAppointment } = require("../controllers/staffController");
-const { create } = require("lodash");
+const { checkUserJWT, checkUserPermission } = require("../middleware/jwtAction");
+const passport = require("passport");
+const passportConfig = require("../middleware/passport");
 const router = express.Router();
 
 const initAPIRoutes = (app) => {
-    //router.all("*", checkUserJWT, checkUserPermission);
+    router.all("*", checkUserJWT, checkUserPermission);
     //Account;
     router.post("/register", register);
     router.post("/login", login);
     router.post("/logout", logout);
+    // Google
+    router.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+    router.get(
+        "/auth/google/callback",
+        passport.authenticate("google", { session: false }, { failureRedirect: "/login" }),
+        (req, res) => {
+            // Successful authentication, redirect home.
+            console.log("check user", res.user);
+            res.redirect("/");
+        },
+    );
 
+    //router.post("/auth/google", passport.authenticate("google-oauth-token", { session: false }), authGoogle);
     // Admin
     router.get("/admin/medical-staff/all", getAllMedicalStaff);
     router.get("/admin/time/all", getAllTime);
     router.get("/admin/position/all", getAllPosition);
 
-    router.get("/medical-staff/:id", getOneMedicalStaff);
+    router.get("/medical-staff", getOneMedicalStaff);
     router.put("/medical-staff", putOneMedicalStaff);
-    router.delete("/medical-staff/:id", deleteOneMedicalStaff);
 
     router.get("/admin/specialty/all", getAllSpecialty);
     router.post("/admin/specialty", postSpecialty);
@@ -69,7 +80,7 @@ const initAPIRoutes = (app) => {
     router.get("/admin/list-of-famous-doctors", getListOfFamousDoctors);
     router.get("/admin/all-doctor-specialty-by-id", getAllDoctorfromSpecialty);
     // Doctor
-    router.get("/doctor/:id/schedule/all", getSchedule);
+    router.get("/doctor/schedule/all", getSchedule);
     router.post("/doctor/schedule", postSchedule);
     router.delete("/doctor/schedule/:id", deleteScheduleById);
 
@@ -81,8 +92,8 @@ const initAPIRoutes = (app) => {
     router.post("/doctor/send-email-invoice", postInvoice);
     router.get("/doctor/invoice", getAllInvoice);
     // Staff
+    router.get("/appointment/all", getAllAppointment);
     router.put("/staff/appointment", putAppointment);
-    router.get("/staff/appointment/all", getAllAppointment);
     router.delete("/staff/appointment/:id", deleteAppointment);
 
     // Patient
@@ -90,7 +101,6 @@ const initAPIRoutes = (app) => {
     //router.get("/patient/:id/appointment/all", getAppointment);
 
     router.get("/patient/medical-record/all", getAllMedicalRecordfromPatient);
-    router.put("/patient/medical-record", putMedicalRecord);
 
     router.put("/patient/information", putPatientInfo);
 

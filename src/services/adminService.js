@@ -60,12 +60,18 @@ const registerAccount = async (rawData) => {
         };
     }
 };
-const loginAccount = async (rawData) => {
+const loginWithLocal = async (rawData) => {
     try {
         let account = await db.Account.findOne({
             where: { email: rawData?.email },
         });
-
+        if (!account.password) {
+            return {
+                EC: 1,
+                EM: "Email or password is incorrect",
+                DT: "",
+            };
+        }
         if (!account || !checkPassword(rawData?.password, account?.password)) {
             return {
                 EC: 1,
@@ -105,6 +111,7 @@ const loginAccount = async (rawData) => {
         let [role, user] = await Promise.all([rolePromise, userPromise]);
 
         let payload = {
+            id: +user.id,
             email: account.email,
             role: role.roleName,
         };
@@ -138,6 +145,71 @@ const loginAccount = async (rawData) => {
                 refresh_token: "refresh_token",
                 email: account.email,
                 user: user,
+                role: role.roleName,
+            },
+        };
+    } catch (err) {
+        console.log(err);
+        return {
+            EC: -1,
+            EM: "Something wrongs in service... ",
+            DT: "",
+        };
+    }
+};
+const loginWithGoogle = async (authType, rawData) => {
+    try {
+        let account = null;
+        if (authType === "google") {
+            account = await db.Account.findOne({
+                where: { authGoogleId: rawData.authGoogleId, authType: "google" },
+                raw: true,
+            });
+
+            if (!account) {
+                account = await db.Account.create({
+                    email: rawData.email,
+                    accountType: "Patient",
+                    authGoogleId: rawData.authGoogleId,
+                    authType: "google",
+                    roleId: 4,
+                });
+                account = account.get({ plain: true });
+
+                await db.Patient.create({
+                    fullName: profile.displayName,
+                    accountId: account.id,
+                });
+            }
+        }
+
+        const rolePromise = db.Role.findOne({ where: { id: account.roleId }, raw: true, nest: true });
+        const patientPrmise = db.Patient.findOne({
+            where: { accountId: account.id },
+            attributes: ["id", "fullName", "dateOfBirth", "gender", "phone", "address"],
+            raw: true,
+            nest: true,
+        });
+
+        let [role, patient] = await Promise.all([rolePromise, patientPrmise]);
+
+        let payload = {
+            id: +patient.id,
+            email: account.email,
+            role: role.roleName,
+        };
+        let token = createJWT(payload);
+
+        patient.dateOfBirth = patient.dateOfBirth ? patient.dateOfBirth.toISOString().split("T")[0] : null;
+
+        return {
+            EC: 0,
+            EM: "Login succeed",
+            DT: {
+                access_token: token,
+                refresh_token: "refresh_token",
+                email: account.email,
+                user: patient,
                 role: role.roleName,
             },
         };
@@ -462,7 +534,7 @@ const putMedicalStaffById = async (rawData) => {
             };
         }
         const binaryData = Buffer.from(rawData.image, "base64");
-        await db.MedicalStaff.update(
+        let data = await db.MedicalStaff.update(
             {
                 fullName: rawData.fullName,
                 image: binaryData,
@@ -479,7 +551,7 @@ const putMedicalStaffById = async (rawData) => {
         return {
             EC: 0,
             EM: "User updated successfully",
-            DT: "",
+            DT: data,
         };
     } catch (err) {
         console.log(err);
@@ -490,35 +562,7 @@ const putMedicalStaffById = async (rawData) => {
         };
     }
 };
-const deleteMedicalStaffById = async (id) => {
-    try {
-        let isUser = await checkUser(id);
-        if (!isUser) {
-            return {
-                EC: 1,
-                EM: "Medical staff doesn't already exist",
-                DT: "",
-            };
-        }
-        let data = await db.MedicalStaff.destroy({
-            where: {
-                id: id,
-            },
-        });
-        return {
-            EC: 0,
-            EM: "Deleted Medical staff",
-            DT: "",
-        };
-    } catch (err) {
-        console.log(err);
-        return {
-            EC: -1,
-            EM: "Somthing wrongs in service... ",
-            DT: "",
-        };
-    }
-};
+
 const deleteDoctorSpecialtyById = async (id) => {
     try {
         let data = await db.DoctorSpecialty.destroy({
@@ -819,7 +863,8 @@ const getAllScheduleByDoctor = async (specialty) => {
 };
 module.exports = {
     registerAccount,
-    loginAccount,
+    loginWithLocal,
+    loginWithGoogle,
     createNewUser,
     getTime,
     getPosition,
@@ -831,7 +876,6 @@ module.exports = {
     ListOfFamousDoctors,
     getMedicalStaffById,
     putMedicalStaffById,
-    deleteMedicalStaffById,
     deleteDoctorSpecialtyById,
     getAllDoctorfromSpecialtyById,
     getMedication,

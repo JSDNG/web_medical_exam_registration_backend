@@ -218,7 +218,6 @@ const getAllAppointmentById = async (id) => {
 
 const deleteAppointmentById = async (id) => {
     try {
-        console.log(id);
         if (!id) {
             return {
                 EC: 1,
