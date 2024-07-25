@@ -3,6 +3,7 @@ const db = require("../models/index");
 const bcrypt = require("bcryptjs");
 const salt = bcrypt.genSaltSync(10);
 const { Op } = require("sequelize");
+const { v4: uuidv4 } = require("uuid");
 const { createJWT } = require("../middleware/jwtAction");
 const hashPass = (password) => {
     return bcrypt.hashSync(password, salt);
@@ -111,12 +112,12 @@ const loginWithLocal = async (rawData) => {
         let [role, user] = await Promise.all([rolePromise, userPromise]);
 
         let payload = {
-            id: +user.id,
+            id: +account.id,
             email: account.email,
             role: role.roleName,
         };
-        let token = createJWT(payload);
-
+        const access_token = createJWT(payload, process.env.JWT_ACCESS_TOKEN_EXIRES_IN);
+        const refresh_token = createJWT(payload, process.env.JWT_REFRESH_TOKEN_EXIRES_IN);
         if (role.roleName !== "Bệnh nhân") {
             user = user.get({ plain: true });
         }
@@ -137,12 +138,20 @@ const loginWithLocal = async (rawData) => {
             });
         }
 
+        await db.Account.update(
+            {
+                refreshToken: refresh_token,
+            },
+            {
+                where: { id: account.id },
+            }
+        );
         return {
             EC: 0,
             EM: "Login succeed",
             DT: {
-                access_token: token,
-                refresh_token: "refresh_token",
+                access_token: access_token,
+                refresh_token: refresh_token,
                 email: account.email,
                 user: user,
                 role: role.roleName,

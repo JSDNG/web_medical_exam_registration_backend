@@ -1,13 +1,13 @@
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
-
+const db = require("../models");
 const nonSecurePaths = ["/logout", "/login", "/register", "/auth/google", "/auth/google/callback"];
 
-const createJWT = (payload) => {
+const createJWT = (payload, time) => {
     let key = process.env.JWT_SECRET;
     let token = null;
     try {
-        token = jwt.sign(payload, key, { expiresIn: process.env.JWT_EXIRES_IN });
+        token = jwt.sign(payload, key, { expiresIn: time });
     } catch (err) {
         console.log(err);
     }
@@ -22,6 +22,9 @@ const verifyToken = (token) => {
         decoded = jwt.verify(token, key);
         data = decoded;
     } catch (err) {
+        if (err instanceof jwt.JsonWebTokenError) {
+            return "JsonWebTokenError";
+        }
         console.log(err);
     }
     return decoded;
@@ -32,41 +35,68 @@ const extractToken = (req) => {
         return req.headers.authorization.split(" ")[1];
     }
 };
-const checkUserJWT = (req, res, next) => {
+const checkUserJWT = async (req, res, next) => {
     if (nonSecurePaths.includes(req.path)) return next();
 
-    let cookies = req.cookies;
-    let tokenFromHeader = extractToken(req);
-    if ((cookies && cookies.jwt) || tokenFromHeader) {
-        let token = cookies && cookies.jwt ? cookies.jwt : tokenFromHeader;
-        let decoded = verifyToken(token);
-        if (decoded) {
+    const cookies = req.cookies;
+    const tokenFromHeader = extractToken(req);
+    const accessToken = cookies?.access_token || tokenFromHeader;
+
+    if (accessToken) {
+        let decoded = verifyToken(accessToken);
+
+        if (decoded && decoded !== "JsonWebTokenError") {
             req.user = decoded;
-            next();
-        } else {
-            return res.status(401).json({
+            return next();
+        }
+    }
+
+    // Handle refresh token logic
+    if (cookies.refresh_token) {
+        decoded = verifyToken(cookies.refresh_token);
+
+        if (decoded && decoded !== "JsonWebTokenError") {
+            const payload = {
+                id: +decoded.id,
+                email: decoded.email,
+                role: decoded.role,
+            };
+            const newAccessToken = createJWT(payload, process.env.JWT_ACCESS_TOKEN_EXIRES_IN);
+            const newRefreshToken = createJWT(payload, process.env.JWT_REFRESH_TOKEN_EXIRES_IN);
+
+            res.cookie("access_token", newAccessToken, {
+                httpOnly: true,
+                maxAge: +process.env.MAX_AGE_ACCESS_TOKEN,
+            });
+            res.cookie("refresh_token", newRefreshToken, {
+                httpOnly: true,
+                maxAge: +process.env.MAX_AGE_REFRESH_TOKEN,
+            });
+
+            await db.Account.update({ refreshToken: newRefreshToken }, { where: { id: decoded.id } });
+
+            return res.status(405).json({
                 EC: -1,
-                EM: "Not authenticated the user",
+                EM: "Please retry with a new token.",
                 DT: "",
             });
         }
-    } else {
-        return res.status(401).json({
-            EC: -1,
-            EM: "Not authenticated the user",
-            DT: "",
-        });
     }
+
+    return res.status(401).json({
+        EC: -1,
+        EM: "Not authenticated the user",
+        DT: "",
+    });
 };
 
 const checkUserPermission = (req, res, next) => {
     if (nonSecurePaths.includes(req.path)) return next();
     if (req.user) {
-        console.log(req.path);
         let role = req.user.role;
         let method = req.method;
         let url = req.path;
-        let id = req.user.id;
+
         const patientRole = [
             { method: "GET", url: "/relative/all" },
             { method: "POST", url: "/patient/quick-check-up" },

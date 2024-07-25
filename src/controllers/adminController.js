@@ -61,6 +61,7 @@ const register = async (req, res) => {
         });
     }
 };
+require("dotenv").config();
 const login = async (req, res) => {
     try {
         if (!req.body.email || !req.body.password) {
@@ -72,8 +73,15 @@ const login = async (req, res) => {
         }
         let data = await loginWithLocal(req.body);
         // set cookie
-        if (data && data.DT && data.DT.access_token) {
-            res.cookie("jwt", data.DT.access_token, { httpOnly: true, maxAge: 60 * 60 * 1000 });
+        if (data && data.DT && data.DT.access_token && data.DT.refresh_token) {
+            res.cookie("access_token", data.DT.access_token, {
+                httpOnly: true,
+                maxAge: +process.env.MAX_AGE_ACCESS_TOKEN,
+            });
+            res.cookie("refresh_token", data.DT.refresh_token, {
+                httpOnly: true,
+                maxAge: +process.env.MAX_AGE_REFRESH_TOKEN,
+            });
         }
 
         return res.status(200).json({
@@ -92,7 +100,8 @@ const login = async (req, res) => {
 };
 const logout = async (req, res) => {
     try {
-        res.clearCookie("jwt");
+        res.clearCookie("access_token");
+        res.clearCookie("refresh_token");
         return res.status(200).json({
             EC: 0,
             EM: "Logout succeed",
