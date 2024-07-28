@@ -186,15 +186,15 @@ const loginWithGoogle = async (authType, rawData) => {
                 account = account.get({ plain: true });
 
                 await db.Patient.create({
-                    fullName: profile.displayName,
-                    accountId: account.id,
+                    fullName: rawData.fullName,
+                    accountId: +account.id,
                 });
             }
         }
 
-        const rolePromise = db.Role.findOne({ where: { id: account.roleId }, raw: true, nest: true });
+        const rolePromise = db.Role.findOne({ where: { id: +account.roleId }, raw: true, nest: true });
         const patientPrmise = db.Patient.findOne({
-            where: { accountId: account.id },
+            where: { accountId: +account.id },
             attributes: ["id", "fullName", "dateOfBirth", "gender", "phone", "address"],
             raw: true,
             nest: true,
@@ -203,20 +203,28 @@ const loginWithGoogle = async (authType, rawData) => {
         let [role, patient] = await Promise.all([rolePromise, patientPrmise]);
 
         let payload = {
-            id: +patient.id,
+            id: +account.id,
             email: account.email,
             role: role.roleName,
         };
-        let token = createJWT(payload);
+        const access_token = createJWT(payload, process.env.JWT_ACCESS_TOKEN_EXIRES_IN);
+        const refresh_token = createJWT(payload, process.env.JWT_REFRESH_TOKEN_EXIRES_IN);
 
         patient.dateOfBirth = patient.dateOfBirth ? patient.dateOfBirth.toISOString().split("T")[0] : null;
-
+        await db.Account.update(
+            {
+                refreshToken: refresh_token,
+            },
+            {
+                where: { id: +account.id },
+            }
+        );
         return {
             EC: 0,
             EM: "Login succeed",
             DT: {
-                access_token: token,
-                refresh_token: "refresh_token",
+                access_token: access_token,
+                refresh_token: refresh_token,
                 email: account.email,
                 user: patient,
                 role: role.roleName,
@@ -497,6 +505,16 @@ const getMedicalStaffById = async (id) => {
                     model: db.Position,
                     attributes: ["id", "positionName"],
                 },
+                {
+                    model: db.Account,
+                    attributes: ["email"],
+                    include: [
+                        {
+                            model: db.Role,
+                            attributes: ["roleName"],
+                        },
+                    ],
+                },
             ],
             // raw: true,
             // nest: true,
@@ -521,7 +539,11 @@ const getMedicalStaffById = async (id) => {
         return {
             EC: 0,
             EM: "get user success",
-            DT: user,
+            DT: {
+                email: user.Account.email,
+                role: user.Account.Role.roleName,
+                user: user,
+            },
         };
     } catch (err) {
         console.log(err);

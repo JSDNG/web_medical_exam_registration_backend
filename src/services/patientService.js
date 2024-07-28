@@ -155,60 +155,7 @@ const createNewRelative = async (rawData) => {
         };
     }
 };
-const getAllAppointment = async (id) => {
-    try {
-        // Lấy dữ liệu từ cơ sở dữ liệu
-        let data = await db.Appointment.findAll({
-            where: [{ patientId: id }, { statusId: 3 }],
-            attributes: ["id", "appointmentNumber"],
-            include: [
-                {
-                    model: db.AllStatus,
-                    attributes: ["id", "statusName"],
-                },
-                {
-                    model: db.Patient,
-                    attributes: ["id", "fullName", "dateOfBirth", "gender", "phone", "address"],
-                },
-                {
-                    model: db.Schedule,
-                    attributes: ["id", "date"],
-                    include: [
-                        {
-                            model: db.MedicalStaff,
-                            attributes: ["id", "fullName", "image", "gender", "phone", "description", "price"],
-                        },
-                        {
-                            model: db.PeriodOfTime,
-                            attributes: ["id", "time"],
-                        },
-                    ],
-                },
-            ],
-        });
 
-        // Kiểm tra nếu data không có giá trị thì trả về mảng rỗng
-        if (!data || data.length === 0) {
-            return {
-                EC: 0,
-                EM: "No Appointments found",
-                DT: [],
-            };
-        }
-        return {
-            EC: 0,
-            EM: "Get the Appointment list",
-            DT: data,
-        };
-    } catch (err) {
-        console.log(err);
-        return {
-            EC: -1,
-            EM: "Something went wrong in service...",
-            DT: "",
-        };
-    }
-};
 const putPatientInfoById = async (rawData) => {
     try {
         let isUser = await checkUser(rawData.id);
@@ -247,7 +194,6 @@ const putPatientInfoById = async (rawData) => {
 };
 const findSchedudeForPatient = async (date, specialty) => {
     try {
-        // Thiếu chuyên khoa
         const [datePart, timePart] = date.split(" ");
         let data = await getAllScheduleByDoctor(specialty);
 
@@ -341,6 +287,12 @@ const getOnePatient = async (id) => {
                 {
                     model: db.Account,
                     attributes: ["id", "email"],
+                    include: [
+                        {
+                            model: db.Role,
+                            attributes: ["roleName"],
+                        },
+                    ],
                 },
             ],
             raw: true,
@@ -348,13 +300,13 @@ const getOnePatient = async (id) => {
         });
         result.dateOfBirth = result.dateOfBirth ? result.dateOfBirth.toISOString().split("T")[0] : null;
         result.email = result.Account.email;
-
+        result.role = result.Account.Role.roleName;
         // Xóa thuộc tính Account không cần thiết
         delete result.Account;
         return {
             EC: 0,
             EM: "Get the patient",
-            DT: result,
+            DT: { email: result.email, role: result.role, user: result },
         };
     } catch (err) {
         console.log(err);
@@ -466,12 +418,10 @@ const getAllMedicalRecordfromPatientById = async (rawData) => {
             }
             return acc;
         }, []);
-
         const result = {
             MedicalRecordRelative: [],
             MedicalRecordPatient: [],
         };
-
         groupedData.forEach((record) => {
             const commonFields = {
                 id: record.id,
@@ -545,7 +495,6 @@ const getAllMedicalRecordfromPatientById = async (rawData) => {
 
 module.exports = {
     createAppointment,
-    getAllAppointment,
     createMedicalRecord,
     getAllRelative,
     createNewRelative,

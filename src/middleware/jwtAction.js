@@ -100,6 +100,7 @@ const checkUserPermission = (req, res, next) => {
         const patientRole = [
             { method: "GET", url: "/relative/all" },
             { method: "POST", url: "/patient/quick-check-up" },
+            { method: "GET", url: "/patient/information" },
             { method: "PUT", url: "/patient/information" },
             { method: "POST", url: "/patient/appointment" },
             { method: "GET", url: "/patient/medical-record/all" },
@@ -109,12 +110,14 @@ const checkUserPermission = (req, res, next) => {
             { method: "GET", url: "/admin/all-doctor-specialty-by-id" },
             { method: "GET", url: "/doctor/schedule/all" },
             { method: "GET", url: "/admin/specialty/all" },
+            { method: "GET", url: "/patient/find-the-right-schedule" },
         ];
         const staffRole = [
             { method: "GET", url: "/appointment/all" },
             { method: "DELETE", url: /^\/staff\/appointment\/\d+$/ },
             { method: "PUT", url: "/staff/appointment" },
             { method: "GET", url: "/medical-staff" },
+            { method: "PUT", url: "/medical-staff" },
         ];
         const doctorRole = [
             { method: "GET", url: "/appointment/all" },
@@ -130,12 +133,15 @@ const checkUserPermission = (req, res, next) => {
             { method: "GET", url: "/medical-staff" },
             { method: "PUT", url: "/medical-staff" },
             { method: "GET", url: "/admin/medication/all" },
+            { method: "GET", url: "/admin/position/all" },
+            { method: "GET", url: "/admin/specialty/all" },
         ];
         const adminRole = [
             { method: "GET", url: "/admin/medical-staff/all" },
             { method: "GET", url: "/admin/time/all" },
             { method: "GET", url: "/admin/position/all" },
             { method: "GET", url: "/medical-staff" },
+            { method: "PUT", url: "/medical-staff" },
             { method: "GET", url: "/admin/specialty/all" },
             { method: "POST", url: "/admin/specialty" },
             { method: "PUT", url: "/admin/specialty" },

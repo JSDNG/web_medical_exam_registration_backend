@@ -105,7 +105,7 @@ const logout = async (req, res) => {
         return res.status(200).json({
             EC: 0,
             EM: "Logout succeed",
-            DT: req.body,
+            DT: "",
         });
     } catch (err) {
         console.log(err);
