@@ -71,7 +71,7 @@ const initAPIRoutes = (app) => {
                 });
                 res.cookie("id", req.user.DT.user.id, {
                     httpOnly: false,
-                    maxAge: +process.env.MAX_AGE_REFRESH_TOKEN,
+                    maxAge: +process.env.MAX_AGE_ACCESS_TOKEN,
                 });
             }
             res.redirect(`${process.env.REACT_URL}`);

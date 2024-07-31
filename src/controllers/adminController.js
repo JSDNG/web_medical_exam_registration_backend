@@ -11,13 +11,14 @@ const {
     getPosition,
     putSpecialtyById,
     createNewSpecialty,
-    ListOfFamousDoctors,
+    listOfFamousDoctors,
     getAllDoctorfromSpecialtyById,
     createNewMedication,
     putMedicationById,
     getMedication,
 } = require("../services/adminService");
 const { createDoctorSpecialty } = require("../services/doctorService");
+require("dotenv").config();
 const register = async (req, res) => {
     try {
         if (!req.body.email || !req.body.password || !req.body.fullName || !req.body.roleId || !req.body.accountType) {
@@ -61,7 +62,7 @@ const register = async (req, res) => {
         });
     }
 };
-require("dotenv").config();
+
 const login = async (req, res) => {
     try {
         if (!req.body.email || !req.body.password) {
@@ -102,9 +103,10 @@ const logout = async (req, res) => {
     try {
         res.clearCookie("access_token");
         res.clearCookie("refresh_token");
+        res.clearCookie("id");
         return res.status(200).json({
             EC: 0,
-            EM: "Logout succeed",
+            EM: "Đăng xuất thành công.",
             DT: "",
         });
     } catch (err) {
@@ -125,7 +127,7 @@ const getAllMedicalStaff = async (req, res) => {
                 DT: "",
             });
         }
-        let data = await getMedicalStaff(req.query.medicalstaff);
+        let data = await getMedicalStaff(req.query.medicalstaff, req.query.search);
         return res.status(200).json({
             EC: data.EC,
             EM: data.EM,
@@ -200,7 +202,9 @@ const postSpecialty = async (req, res) => {
 };
 const getAllSpecialty = async (req, res) => {
     try {
-        let data = await getSpecialty();
+        let page = req.query.page;
+        let limit = req.query.limit;
+        let data = await getSpecialty(+page, +limit);
         return res.status(200).json({
             EC: data.EC,
             EM: data.EM,
@@ -287,7 +291,10 @@ const putOneMedicalStaff = async (req, res) => {
 };
 const getListOfFamousDoctors = async (req, res) => {
     try {
-        let data = await ListOfFamousDoctors();
+        let page = req.query.page;
+        let limit = req.query.limit;
+        let data = await listOfFamousDoctors(+page, +limit);
+
         return res.status(200).json({
             EC: data.EC,
             EM: data.EM,
@@ -386,6 +393,7 @@ const getAllMedication = async (req, res) => {
         });
     }
 };
+
 module.exports = {
     register,
     login,

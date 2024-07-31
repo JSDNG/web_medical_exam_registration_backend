@@ -1,7 +1,21 @@
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const db = require("../models");
-const nonSecurePaths = ["/logout", "/login", "/register", "/auth/google", "/auth/google/callback"];
+const nonSecurePaths = [
+    "/logout",
+    "/login",
+    "/register",
+    "/auth/google",
+    "/auth/google/callback",
+    "/admin/specialty/all",
+    "/relative/all",
+    "/doctor/schedule/all",
+    "/patient/information",
+    "/admin/medical-staff/all",
+    "/patient/medical-record/all",
+    "/admin/list-of-famous-doctors",
+    "/admin/all-doctor-specialty-by-id",
+];
 
 const createJWT = (payload, time) => {
     let key = process.env.JWT_SECRET;
@@ -98,7 +112,6 @@ const checkUserPermission = (req, res, next) => {
         let url = req.path;
 
         const patientRole = [
-            { method: "GET", url: "/relative/all" },
             { method: "POST", url: "/patient/quick-check-up" },
             { method: "GET", url: "/patient/information" },
             { method: "PUT", url: "/patient/information" },
@@ -106,10 +119,7 @@ const checkUserPermission = (req, res, next) => {
             { method: "GET", url: "/patient/medical-record/all" },
             { method: "GET", url: "/patient/medical-record/all" },
             { method: "GET", url: "/medical-staff" },
-            { method: "GET", url: "/admin/list-of-famous-doctors" },
-            { method: "GET", url: "/admin/all-doctor-specialty-by-id" },
             { method: "GET", url: "/doctor/schedule/all" },
-            { method: "GET", url: "/admin/specialty/all" },
             { method: "GET", url: "/patient/find-the-right-schedule" },
         ];
         const staffRole = [
@@ -137,7 +147,6 @@ const checkUserPermission = (req, res, next) => {
             { method: "GET", url: "/admin/specialty/all" },
         ];
         const adminRole = [
-            { method: "GET", url: "/admin/medical-staff/all" },
             { method: "GET", url: "/admin/time/all" },
             { method: "GET", url: "/admin/position/all" },
             { method: "GET", url: "/medical-staff" },

@@ -298,7 +298,9 @@ const getOnePatient = async (id) => {
             raw: true,
             nest: true,
         });
-        result.dateOfBirth = result.dateOfBirth ? result.dateOfBirth.toISOString().split("T")[0] : null;
+        if (result) {
+            result.dateOfBirth = result.dateOfBirth ? result.dateOfBirth.toISOString().split("T")[0] : null;
+        }
         result.email = result.Account.email;
         result.role = result.Account.Role.roleName;
         // Xóa thuộc tính Account không cần thiết
