@@ -1,13 +1,27 @@
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
+const db = require("../models");
+const nonSecurePaths = [
+    "/logout",
+    "/login",
+    "/register",
+    "/auth/google",
+    "/auth/google/callback",
+    "/admin/specialty/all",
+    "/relative/all",
+    "/doctor/schedule/all",
+    "/patient/information",
+    "/admin/medical-staff/all",
+    "/patient/medical-record/all",
+    "/admin/list-of-famous-doctors",
+    "/admin/all-doctor-specialty-by-id",
+];
 
-const nonSecurePaths = ["/logout", "/login", "/register"];
-
-const createJWT = (payload) => {
+const createJWT = (payload, time) => {
     let key = process.env.JWT_SECRET;
     let token = null;
     try {
-        token = jwt.sign(payload, key, { expiresIn: process.env.JWT_EXIRES_IN });
+        token = jwt.sign(payload, key, { expiresIn: time });
     } catch (err) {
         console.log(err);
     }
@@ -22,6 +36,9 @@ const verifyToken = (token) => {
         decoded = jwt.verify(token, key);
         data = decoded;
     } catch (err) {
+        if (err instanceof jwt.JsonWebTokenError) {
+            return "JsonWebTokenError";
+        }
         console.log(err);
     }
     return decoded;
@@ -32,50 +49,136 @@ const extractToken = (req) => {
         return req.headers.authorization.split(" ")[1];
     }
 };
-const checkUserJWT = (req, res, next) => {
+const checkUserJWT = async (req, res, next) => {
     if (nonSecurePaths.includes(req.path)) return next();
 
-    let cookies = req.cookies;
-    let tokenFromHeader = extractToken(req);
-    if ((cookies && cookies.jwt) || tokenFromHeader) {
-        let token = cookies && cookies.jwt ? cookies.jwt : tokenFromHeader;
-        let decoded = verifyToken(token);
-        if (decoded) {
+    const cookies = req.cookies;
+    const tokenFromHeader = extractToken(req);
+    const accessToken = cookies?.access_token || tokenFromHeader;
+
+    if (accessToken) {
+        let decoded = verifyToken(accessToken);
+
+        if (decoded && decoded !== "JsonWebTokenError") {
             req.user = decoded;
-            next();
-        } else {
-            return res.status(401).json({
+            return next();
+        }
+    }
+
+    // Handle refresh token logic
+    if (cookies.refresh_token) {
+        decoded = verifyToken(cookies.refresh_token);
+
+        if (decoded && decoded !== "JsonWebTokenError") {
+            const payload = {
+                id: +decoded.id,
+                email: decoded.email,
+                role: decoded.role,
+            };
+            const newAccessToken = createJWT(payload, process.env.JWT_ACCESS_TOKEN_EXIRES_IN);
+            const newRefreshToken = createJWT(payload, process.env.JWT_REFRESH_TOKEN_EXIRES_IN);
+
+            res.cookie("access_token", newAccessToken, {
+                httpOnly: true,
+                maxAge: +process.env.MAX_AGE_ACCESS_TOKEN,
+            });
+            res.cookie("refresh_token", newRefreshToken, {
+                httpOnly: true,
+                maxAge: +process.env.MAX_AGE_REFRESH_TOKEN,
+            });
+
+            await db.Account.update({ refreshToken: newRefreshToken }, { where: { id: decoded.id } });
+
+            return res.status(405).json({
                 EC: -1,
-                EM: "Not authenticated the user",
+                EM: "Please retry with a new token.",
                 DT: "",
             });
         }
-    } else {
-        return res.status(401).json({
-            EC: -1,
-            EM: "Not authenticated the user",
-            DT: "",
-        });
     }
+
+    return res.status(401).json({
+        EC: -1,
+        EM: "Not authenticated the user",
+        DT: "",
+    });
 };
 
 const checkUserPermission = (req, res, next) => {
     if (nonSecurePaths.includes(req.path)) return next();
-
     if (req.user) {
-        let email = req.user.email;
-        let roles = req.user.dataRoles.Roles;
-        let currentUrl = req.path;
-        if (!roles || roles.length === 0) {
+        let role = req.user.role;
+        let method = req.method;
+        let url = req.path;
+
+        const patientRole = [
+            { method: "POST", url: "/patient/quick-check-up" },
+            { method: "GET", url: "/patient/information" },
+            { method: "PUT", url: "/patient/information" },
+            { method: "POST", url: "/patient/appointment" },
+            { method: "GET", url: "/patient/medical-record/all" },
+            { method: "GET", url: "/patient/medical-record/all" },
+            { method: "GET", url: "/medical-staff" },
+            { method: "GET", url: "/doctor/schedule/all" },
+            { method: "GET", url: "/patient/find-the-right-schedule" },
+        ];
+        const staffRole = [
+            { method: "GET", url: "/appointment/all" },
+            { method: "DELETE", url: /^\/staff\/appointment\/\d+$/ },
+            { method: "PUT", url: "/staff/appointment" },
+            { method: "GET", url: "/medical-staff" },
+            { method: "PUT", url: "/medical-staff" },
+        ];
+        const doctorRole = [
+            { method: "GET", url: "/appointment/all" },
+            { method: "GET", url: "/doctor/schedule/all" },
+            { method: "GET", url: "/admin/time/all" },
+            { method: "POST", url: "/doctor/schedule" },
+            { method: "DELETE", url: /^\/doctor\/schedule\/\d+$/ },
+            { method: "GET", url: "/doctor/appointment-from-one-doctor/all" },
+            { method: "PUT", url: "/doctor/examining-doctor" },
+            { method: "POST", url: "/doctor/prescription" },
+            { method: "POST", url: "/doctor/send-email-invoice" },
+            { method: "GET", url: "/doctor/invoice" },
+            { method: "GET", url: "/medical-staff" },
+            { method: "PUT", url: "/medical-staff" },
+            { method: "GET", url: "/admin/medication/all" },
+            { method: "GET", url: "/admin/position/all" },
+            { method: "GET", url: "/admin/specialty/all" },
+        ];
+        const adminRole = [
+            { method: "GET", url: "/admin/time/all" },
+            { method: "GET", url: "/admin/position/all" },
+            { method: "GET", url: "/medical-staff" },
+            { method: "PUT", url: "/medical-staff" },
+            { method: "GET", url: "/admin/specialty/all" },
+            { method: "POST", url: "/admin/specialty" },
+            { method: "PUT", url: "/admin/specialty" },
+            { method: "GET", url: "/admin/medication/all" },
+            { method: "POST", url: "/admin/medication" },
+            { method: "PUT", url: "/admin/medication" },
+            { method: "GET", url: "/admin/list-of-famous-doctors" },
+            { method: "GET", url: "/admin/all-doctor-specialty-by-id" },
+        ];
+        if (!role || role.length === 0) {
             return res.status(403).json({
                 EC: -1,
                 EM: `you don't have the permission to access this resource...`,
                 DT: "",
             });
         }
+        const roleAccess = {
+            "Bệnh nhân": patientRole,
+            "Nhân viên": staffRole,
+            "Bác sĩ": doctorRole,
+            "Quản trị viên": adminRole,
+        };
 
-        let canAccess = roles.some((item) => item.url === currentUrl);
-        if (canAccess === true) {
+        function checkAccess(role, method, url) {
+            return roleAccess[role]?.some((role) => role.method === method && isMatch(url, role.url));
+        }
+
+        if (checkAccess(role, method, url)) {
             next();
         } else {
             return res.status(403).json({
@@ -92,6 +195,15 @@ const checkUserPermission = (req, res, next) => {
         });
     }
 };
+function isMatch(url, pattern) {
+    if (pattern instanceof RegExp) {
+        return pattern.test(url);
+    } else if (typeof pattern === "string") {
+        return url === pattern;
+    } else {
+        throw new Error("Pattern must be a string or RegExp");
+    }
+}
 module.exports = {
     createJWT,
     verifyToken,

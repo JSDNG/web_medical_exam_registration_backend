@@ -14,16 +14,6 @@ const checkUserId = async (id) => {
     }
     return false;
 };
-// const checkUsername = async (username) => {
-//     let user = await db.MedicalStaff.findOne({
-//         where: { fullName: username },
-//     });
-
-//     if (user) {
-//         return true;
-//     }
-//     return false;
-// };
 const createSchedule = async (rawData) => {
     try {
         // Lấy thông tin lịch hiện tại từ cơ sở dữ liệu
@@ -156,6 +146,7 @@ const getAllSchedule = async (id) => {
 };
 const deleteSchedule = async (rawData) => {
     try {
+        console.log(rawData);
         if (!rawData || rawData.length === 0) {
             return {
                 EC: 1,
@@ -163,39 +154,19 @@ const deleteSchedule = async (rawData) => {
                 DT: "",
             };
         }
-
-        if (rawData.length === 1) {
-            let data = await db.Appointment.findOne({
-                where: { scheduleId: rawData[0] },
-            });
-            if (data) {
-                return {
-                    EC: 1,
-                    EM: "Cannot delete schedule",
-                    DT: "",
-                };
-            } else {
-                return {
-                    EC: 0,
-                    EM: "Can delete schedule",
-                    DT: "",
-                };
-            }
-        } else {
-            await db.Schedule.destroy({
-                where: {
-                    id: {
-                        [Op.in]: rawData,
-                    },
+        await db.Schedule.destroy({
+            where: {
+                id: {
+                    [Op.in]: rawData,
                 },
-            });
+            },
+        });
 
-            return {
-                EC: 0,
-                EM: "Deleted",
-                DT: "",
-            };
-        }
+        return {
+            EC: 0,
+            EM: "Deleted",
+            DT: "",
+        };
     } catch (err) {
         console.log(err);
         return {
@@ -205,11 +176,11 @@ const deleteSchedule = async (rawData) => {
         };
     }
 };
-const getAllAppointmentfromOneDoctor = async (id) => {
+const getAllAppointmentfromOneDoctor = async (doctorId, statusId) => {
     try {
         // Lấy dữ liệu từ cơ sở dữ liệu
         let data = await db.Appointment.findAll({
-            attributes: ["id", "appointmentNumber", "staffId"],
+            attributes: ["id", "appointmentNumber", "staffId", "updatedAt"],
             include: [
                 {
                     model: db.AllStatus,
@@ -262,7 +233,9 @@ const getAllAppointmentfromOneDoctor = async (id) => {
             nest: true,
         });
         // Lọc theo id của bác sĩ
-        let result = data.filter((item) => item.Schedule.MedicalStaff.id === +id && item.AllStatus.id === 2);
+        let result = data.filter(
+            (item) => item.Schedule.MedicalStaff.id === +doctorId && item.AllStatus.id === +statusId
+        );
 
         // Kiểm tra nếu data không có giá trị thì trả về mảng rỗng
         if (!data || data.length === 0 || result.length === 0) {
@@ -270,6 +243,47 @@ const getAllAppointmentfromOneDoctor = async (id) => {
                 EC: 0,
                 EM: "No Appointments found",
                 DT: [],
+            };
+        }
+        if (+statusId === 3) {
+            let results = result.map((item) => {
+                let patientInfo =
+                    item.MedicalRecord.Relative.id !== null ? item.MedicalRecord.Relative : item.MedicalRecord.Patient;
+
+                let items = {
+                    id: item.id,
+                    appointmentNumber: item.appointmentNumber,
+                    updatedAt: item.updatedAt,
+                    statusAM: item.AllStatus.statusName,
+                    time: item.Schedule.PeriodOfTime.time,
+                    date: item.Schedule.date.toISOString().split("T")[0],
+                    MedicalRecord: {
+                        id: item.MedicalRecord.id,
+                        medicalHistory: item.MedicalRecord.medicalHistory,
+                        reason: item.MedicalRecord.reason,
+                        specialtyMR: item.MedicalRecord.Specialty.specialtyName,
+                    },
+                    Patient: {
+                        id: patientInfo.id,
+                        fullName: patientInfo.fullName,
+                        dateOfBirth: patientInfo.dateOfBirth
+                            ? patientInfo.dateOfBirth.toISOString().split("T")[0]
+                            : null,
+                        gender: patientInfo.gender,
+                        phone: patientInfo.phone,
+                        email: patientInfo.email || patientInfo.Account?.email,
+                        address: patientInfo.address,
+                    },
+                };
+
+                return items;
+            });
+
+            results.sort((a, b) => b.updatedAt - a.updatedAt);
+            return {
+                EC: 0,
+                EM: "Get the Appointment list",
+                DT: results,
             };
         }
         // Sắp xếp theo date và time
@@ -352,28 +366,47 @@ const getAllAppointmentfromOneDoctor = async (id) => {
 };
 const createDoctorSpecialty = async (rawData, id) => {
     try {
-        let result = rawData.map((specialtyId) => ({
+        // Lấy tất cả specialtyId hiện tại của doctorId từ cơ sở dữ liệu
+        const existingSpecialties = await db.DoctorSpecialty.findAll({
+            where: {
+                doctorId: id,
+                specialtyId: rawData,
+            },
+            attributes: ["specialtyId"],
+        });
+
+        // Tạo một tập hợp chứa những specialtyId đã tồn tại
+        const existingSpecialtyIds = new Set(existingSpecialties.map((specialty) => specialty.specialtyId));
+
+        // Lọc ra những specialtyId chưa có trong cơ sở dữ liệu
+        const newSpecialties = rawData.filter((specialtyId) => !existingSpecialtyIds.has(specialtyId));
+
+        // Tạo đối tượng mới chỉ với những specialtyId chưa tồn tại
+        const result = newSpecialties.map((specialtyId) => ({
             doctorId: id,
             specialtyId: specialtyId,
         }));
 
+        // Thực hiện bulkCreate nếu có specialtyId mới
         if (result.length > 0) {
             await db.DoctorSpecialty.bulkCreate(result);
         }
+
         return {
             EC: 0,
-            EM: "Schedule created successfully",
+            EM: "Specialties created successfully",
             DT: "",
         };
     } catch (err) {
         console.error(err);
         return {
             EC: -1,
-            EM: "Something wrongs in service...",
+            EM: "Something went wrong in the service...",
             DT: "",
         };
     }
 };
+
 const createPrescription = async (rawData) => {
     try {
         let result = await db.Prescription.create({
@@ -454,8 +487,9 @@ const createPrescription = async (rawData) => {
 
 const createInvoice = async (rawData) => {
     try {
+        const binaryData = Buffer.from(rawData.file, "base64");
         let data = await db.Invoice.create({
-            file: rawData.file,
+            file: binaryData,
             doctorId: rawData.doctorId,
             recordId: rawData.recordId,
         });
@@ -504,6 +538,34 @@ const getAllInvoiceByDoctorId = async (id) => {
         };
     }
 };
+const putMedicalRecordById = async (rawData) => {
+    try {
+        console.log(rawData);
+        await db.MedicalRecord.update(
+            {
+                medicalHistory: rawData.medicalHistory,
+                reason: rawData.reason,
+                diagnosis: rawData.diagnosis,
+                statusId: rawData.statusId,
+            },
+            {
+                where: { id: rawData.id },
+            }
+        );
+        return {
+            EC: 0,
+            EM: "Medical Record updated successfully",
+            DT: "",
+        };
+    } catch (err) {
+        console.log(err);
+        return {
+            EC: -1,
+            EM: "Something wrongs in service... ",
+            DT: "",
+        };
+    }
+};
 module.exports = {
     createSchedule,
     getAllSchedule,
@@ -513,4 +575,5 @@ module.exports = {
     createPrescription,
     createInvoice,
     getAllInvoiceByDoctorId,
+    putMedicalRecordById,
 };

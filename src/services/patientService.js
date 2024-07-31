@@ -3,7 +3,6 @@ const _ = require("lodash");
 const { reduce } = require("lodash");
 const { Op } = require("sequelize");
 const Sequelize = require("sequelize");
-const { getAllSchedule } = require("./doctorService");
 const { getAllScheduleByDoctor } = require("./adminService");
 const checkUser = async (id) => {
     let userId = await db.Patient.findOne({
@@ -156,114 +155,7 @@ const createNewRelative = async (rawData) => {
         };
     }
 };
-const deleteRelative = async (id) => {
-    try {
-        if (!id) {
-            return {
-                EC: 1,
-                EM: "No Relative to delete",
-                DT: "",
-            };
-        }
-        await db.Relative.destroy({
-            where: { id: id },
-        });
-        return {
-            EC: 0,
-            EM: "Deleted",
-            DT: "",
-        };
-    } catch (err) {
-        console.log(err);
-        return {
-            EC: -1,
-            EM: "Something went wrong in service...",
-            DT: "",
-        };
-    }
-};
-const getAllAppointment = async (id) => {
-    try {
-        // Lấy dữ liệu từ cơ sở dữ liệu
-        let data = await db.Appointment.findAll({
-            where: [{ patientId: id }, { statusId: 3 }],
-            attributes: ["id", "appointmentNumber"],
-            include: [
-                {
-                    model: db.AllStatus,
-                    attributes: ["id", "statusName"],
-                },
-                {
-                    model: db.Patient,
-                    attributes: ["id", "fullName", "dateOfBirth", "gender", "phone", "address"],
-                },
-                {
-                    model: db.Schedule,
-                    attributes: ["id", "date"],
-                    include: [
-                        {
-                            model: db.MedicalStaff,
-                            attributes: ["id", "fullName", "image", "gender", "phone", "description", "price"],
-                        },
-                        {
-                            model: db.PeriodOfTime,
-                            attributes: ["id", "time"],
-                        },
-                    ],
-                },
-            ],
-        });
 
-        // Kiểm tra nếu data không có giá trị thì trả về mảng rỗng
-        if (!data || data.length === 0) {
-            return {
-                EC: 0,
-                EM: "No Appointments found",
-                DT: [],
-            };
-        }
-        return {
-            EC: 0,
-            EM: "Get the Appointment list",
-            DT: data,
-        };
-    } catch (err) {
-        console.log(err);
-        return {
-            EC: -1,
-            EM: "Something went wrong in service...",
-            DT: "",
-        };
-    }
-};
-const putMedicalRecordById = async (rawData) => {
-    try {
-        console.log(rawData);
-        await db.MedicalRecord.update(
-            {
-                medicalHistory: rawData.medicalHistory,
-                reason: rawData.reason,
-                diagnosis: rawData.diagnosis,
-                statusId: rawData.statusId,
-            },
-            {
-                where: { id: rawData.id },
-            }
-        );
-        return {
-            EC: 0,
-            EM: "Medical Record updated successfully",
-            DT: "",
-        };
-    } catch (err) {
-        console.log(err);
-        return {
-            EC: -1,
-            EM: "Something wrongs in service... ",
-            DT: "",
-        };
-    }
-};
 const putPatientInfoById = async (rawData) => {
     try {
         let isUser = await checkUser(rawData.id);
@@ -302,10 +194,9 @@ const putPatientInfoById = async (rawData) => {
 };
 const findSchedudeForPatient = async (date, specialty) => {
     try {
-        // Thiếu chuyên khoa
         const [datePart, timePart] = date.split(" ");
         let data = await getAllScheduleByDoctor(specialty);
-        
+
         // Lọc các lịch trình theo điều kiện Appointment
         data.DT.forEach((entry) => {
             entry.schedules = entry.schedules.filter((schedule) => {
@@ -396,20 +287,28 @@ const getOnePatient = async (id) => {
                 {
                     model: db.Account,
                     attributes: ["id", "email"],
+                    include: [
+                        {
+                            model: db.Role,
+                            attributes: ["roleName"],
+                        },
+                    ],
                 },
             ],
             raw: true,
             nest: true,
         });
-        result.dateOfBirth = result.dateOfBirth ? result.dateOfBirth.toISOString().split("T")[0] : null;
+        if (result) {
+            result.dateOfBirth = result.dateOfBirth ? result.dateOfBirth.toISOString().split("T")[0] : null;
+        }
         result.email = result.Account.email;
-
+        result.role = result.Account.Role.roleName;
         // Xóa thuộc tính Account không cần thiết
         delete result.Account;
         return {
             EC: 0,
             EM: "Get the patient",
-            DT: result,
+            DT: { email: result.email, role: result.role, user: result },
         };
     } catch (err) {
         console.log(err);
@@ -521,12 +420,10 @@ const getAllMedicalRecordfromPatientById = async (rawData) => {
             }
             return acc;
         }, []);
-
         const result = {
             MedicalRecordRelative: [],
             MedicalRecordPatient: [],
         };
-
         groupedData.forEach((record) => {
             const commonFields = {
                 id: record.id,
@@ -546,8 +443,8 @@ const getAllMedicalRecordfromPatientById = async (rawData) => {
                     phone: record.MedicalStaff.phone,
                     price: record.MedicalStaff.price,
                 },
-                Prescriptions: record.Prescriptions[0].id ? record.Prescriptions : null,
-                Invoice: record.Invoices.id ? record.Invoices : null,
+                //Prescriptions: record.Prescriptions[0].id ? record.Prescriptions : null,
+                //Invoice: record.Invoices.id ? record.Invoices : null,
             };
 
             if (record.Relative && record.Relative.id) {
@@ -600,12 +497,9 @@ const getAllMedicalRecordfromPatientById = async (rawData) => {
 
 module.exports = {
     createAppointment,
-    getAllAppointment,
     createMedicalRecord,
     getAllRelative,
     createNewRelative,
-    deleteRelative,
-    putMedicalRecordById,
     putPatientInfoById,
     findSchedudeForPatient,
     getOnePatient,

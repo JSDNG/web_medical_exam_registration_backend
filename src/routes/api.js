@@ -18,7 +18,6 @@ const {
     getAllSpecialty,
     getOneMedicalStaff,
     putOneMedicalStaff,
-    deleteOneMedicalStaff,
     getAllPosition,
     putOneSpecialty,
     postSpecialty,
@@ -30,33 +29,62 @@ const {
 } = require("../controllers/adminController");
 const {
     postAppointment,
-    putMedicalRecord,
     putPatientInfo,
-    getAppointment,
     getRelative,
     quickCheckUp,
     getAllMedicalRecordfromPatient,
+    getPatient,
+    getScheduleForPatient,
 } = require("../controllers/patientController");
 
 const { putAppointment, getAllAppointment, deleteAppointment } = require("../controllers/staffController");
-const { create } = require("lodash");
+const { checkUserJWT, checkUserPermission } = require("../middleware/jwtAction");
+const passport = require("passport");
+const passportConfig = require("../middleware/passport");
+require("dotenv").config();
+
 const router = express.Router();
 
 const initAPIRoutes = (app) => {
-    //router.all("*", checkUserJWT, checkUserPermission);
+    router.all("*", checkUserJWT, checkUserPermission);
     //Account;
     router.post("/register", register);
     router.post("/login", login);
     router.post("/logout", logout);
+    // Google
+    router.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+    router.get(
+        "/auth/google/callback",
+        passport.authenticate("google", {
+            session: false,
+            failureRedirect: `${process.env.REACT_URL}/login`,
+        }),
+        (req, res) => {
+            if (req.user && req.user.DT && req.user.DT.access_token && req.user.DT.refresh_token) {
+                res.cookie("access_token", req.user.DT.access_token, {
+                    httpOnly: true,
+                    maxAge: +process.env.MAX_AGE_ACCESS_TOKEN,
+                });
+                res.cookie("refresh_token", req.user.DT.refresh_token, {
+                    httpOnly: true,
+                    maxAge: +process.env.MAX_AGE_REFRESH_TOKEN,
+                });
+                res.cookie("id", req.user.DT.user.id, {
+                    httpOnly: false,
+                    maxAge: +process.env.MAX_AGE_ACCESS_TOKEN,
+                });
+            }
+            res.redirect(`${process.env.REACT_URL}`);
+        }
+    );
 
     // Admin
     router.get("/admin/medical-staff/all", getAllMedicalStaff);
     router.get("/admin/time/all", getAllTime);
     router.get("/admin/position/all", getAllPosition);
 
-    router.get("/medical-staff/:id", getOneMedicalStaff);
+    router.get("/medical-staff", getOneMedicalStaff);
     router.put("/medical-staff", putOneMedicalStaff);
-    router.delete("/medical-staff/:id", deleteOneMedicalStaff);
 
     router.get("/admin/specialty/all", getAllSpecialty);
     router.post("/admin/specialty", postSpecialty);
@@ -69,7 +97,7 @@ const initAPIRoutes = (app) => {
     router.get("/admin/list-of-famous-doctors", getListOfFamousDoctors);
     router.get("/admin/all-doctor-specialty-by-id", getAllDoctorfromSpecialty);
     // Doctor
-    router.get("/doctor/:id/schedule/all", getSchedule);
+    router.get("/doctor/schedule/all", getSchedule);
     router.post("/doctor/schedule", postSchedule);
     router.delete("/doctor/schedule/:id", deleteScheduleById);
 
@@ -81,17 +109,15 @@ const initAPIRoutes = (app) => {
     router.post("/doctor/send-email-invoice", postInvoice);
     router.get("/doctor/invoice", getAllInvoice);
     // Staff
+    router.get("/appointment/all", getAllAppointment);
     router.put("/staff/appointment", putAppointment);
-    router.get("/staff/appointment/all", getAllAppointment);
     router.delete("/staff/appointment/:id", deleteAppointment);
 
     // Patient
     router.post("/patient/appointment", postAppointment);
-    //router.get("/patient/:id/appointment/all", getAppointment);
-
+    router.get("/patient/find-the-right-schedule", getScheduleForPatient);
     router.get("/patient/medical-record/all", getAllMedicalRecordfromPatient);
-    router.put("/patient/medical-record", putMedicalRecord);
-
+    router.get("/patient/information", getPatient);
     router.put("/patient/information", putPatientInfo);
 
     router.post("/patient/quick-check-up", quickCheckUp);

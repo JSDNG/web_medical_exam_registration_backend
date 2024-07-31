@@ -4,11 +4,10 @@ const {
     deleteSchedule,
     getAllAppointmentfromOneDoctor,
     createPrescription,
-    deletePrescription,
     createInvoice,
     getAllInvoiceByDoctorId,
+    putMedicalRecordById,
 } = require("../services/doctorService");
-const { putMedicalRecordById } = require("../services/patientService");
 const { updateAppointment } = require("../services/staffService");
 
 const postSchedule = async (req, res) => {
@@ -43,7 +42,7 @@ const postSchedule = async (req, res) => {
 };
 const getSchedule = async (req, res) => {
     try {
-        let data = await getAllSchedule(req.params.id);
+        let data = await getAllSchedule(req.query.id);
         return res.status(200).json({
             EC: data.EC,
             EM: data.EM,
@@ -77,7 +76,7 @@ const deleteScheduleById = async (req, res) => {
 };
 const getAllAppointmentDoctor = async (req, res) => {
     try {
-        let data = await getAllAppointmentfromOneDoctor(req.query.id);
+        let data = await getAllAppointmentfromOneDoctor(req.query.doctorId, req.query.statusId);
         return res.status(200).json({
             EC: data.EC,
             EM: data.EM,
@@ -151,7 +150,7 @@ const postInvoice = async (req, res) => {
                 DT: "",
             });
         }
-        console.log("1 >>>", req.body);
+        console.log(">>>",req.body);
         let data = await createInvoice(req.body);
         return res.status(200).json({
             EC: data.EC,

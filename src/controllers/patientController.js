@@ -1,12 +1,9 @@
 const { getMedicalStaffById, getOneSpecialty } = require("../services/adminService");
 const {
-    getAllAppointment,
     createAppointment,
     createMedicalRecord,
-    putMedicalRecordById,
     putPatientInfoById,
     createNewRelative,
-    deleteRelative,
     getAllRelative,
     findSchedudeForPatient,
     getOnePatient,
@@ -82,23 +79,6 @@ const postAppointment = async (req, res) => {
     }
 };
 
-const getAppointment = async (req, res) => {
-    try {
-        let data = await getAllAppointment(req.params.id);
-        return res.status(200).json({
-            EC: data.EC,
-            EM: data.EM,
-            DT: data.DT,
-        });
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({
-            EC: -1,
-            EM: "error from server",
-            DT: "",
-        });
-    }
-};
 const postMedicalRecord = async (req, res) => {
     try {
         if (!req.body) {
@@ -114,31 +94,6 @@ const postMedicalRecord = async (req, res) => {
             EM: data.EM,
             DT: data.DT,
         });
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({
-            EC: -1,
-            EM: "error from server",
-            DT: "",
-        });
-    }
-};
-const putMedicalRecord = async (req, res) => {
-    try {
-        if (!req.body.id) {
-            return res.status(200).json({
-                EC: 1,
-                EM: "missing required params",
-                DT: "",
-            });
-        } else {
-            let data = await putMedicalRecordById(req.body);
-            return res.status(200).json({
-                EC: data.EC,
-                EM: data.EM,
-                DT: data.DT,
-            });
-        }
     } catch (err) {
         console.log(err);
         res.status(500).json({
@@ -191,24 +146,28 @@ const getRelative = async (req, res) => {
         });
     }
 };
-
-const quickCheckUp = async (req, res) => {
-    let appointmentId = null;
-    let relativeId = null;
+const getPatient = async (req, res) => {
     try {
-        const { medicalRecord, dateQuickCheckUp, specialty, relative } = req.body;
-        // Input validation
-        if (!medicalRecord || !dateQuickCheckUp) {
-            return res.status(400).json({
-                EC: 1,
-                EM: "Missing required parameters",
-                DT: "",
-            });
-        }
-
+        let data = await getOnePatient(req.query.id);
+        return res.status(200).json({
+            EC: data.EC,
+            EM: data.EM,
+            DT: data.DT,
+        });
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            EC: -1,
+            EM: "error from server",
+            DT: "",
+        });
+    }
+};
+const getScheduleForPatient = async (req, res) => {
+    try {
+        const { dateQuickCheckUp, specialty } = req.query;
         // Find schedule for patient
         const schedule = await findSchedudeForPatient(dateQuickCheckUp, specialty);
-        console.log(schedule);
         if (schedule.EC !== 0 || schedule.DT.length === 0) {
             return res.status(200).json({
                 EC: schedule.EC,
@@ -216,11 +175,38 @@ const quickCheckUp = async (req, res) => {
                 DT: "",
             });
         }
+        return res.status(200).json({
+            EC: schedule.EC,
+            EM: schedule.EM,
+            DT: schedule.DT,
+        });
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            EC: -1,
+            EM: "error from server",
+            DT: "",
+        });
+    }
+};
+const quickCheckUp = async (req, res) => {
+    let appointmentId = null;
+    let relativeId = null;
+    try {
+        const { medicalRecord, relative, schedule } = req.body;
+        // Input validation
+        if (!medicalRecord) {
+            return res.status(400).json({
+                EC: 1,
+                EM: "Missing required parameters",
+                DT: "",
+            });
+        }
 
         // Create appointment
         const appointmentInfo = await createAppointment({
             statusId: 2,
-            scheduleId: schedule.DT.id,
+            scheduleId: schedule.id,
             patientId: medicalRecord?.patientId,
         });
         if (appointmentInfo.EC !== 0) {
@@ -246,7 +232,7 @@ const quickCheckUp = async (req, res) => {
         let medicalRecordData = {
             medicalHistory: medicalRecord?.medicalHistory,
             reason: medicalRecord?.reason,
-            doctorId: schedule.DT.doctorId,
+            doctorId: schedule.doctorId,
             patientId: medicalRecord?.patientId,
             specialtyId: medicalRecord?.specialtyId,
         };
@@ -264,7 +250,7 @@ const quickCheckUp = async (req, res) => {
         }
 
         // Fetch additional info
-        let doctorInfo = await getMedicalStaffById(schedule.DT.doctorId);
+        let doctorInfo = await getMedicalStaffById(schedule.doctorId);
         let specialtyInfo = await getOneSpecialty(medicalRecordInfo.DT.specialtyId);
         let patientInfo;
         if (relative) {
@@ -276,10 +262,10 @@ const quickCheckUp = async (req, res) => {
         let result = {
             appointmentInfo: appointmentInfo.DT,
             medicalRecordInfo: medicalRecordInfo.DT,
-            doctorInfo: doctorInfo.DT,
+            doctorInfo: doctorInfo.DT.user,
             specialtyInfo: specialtyInfo.DT,
-            patientInfo: patientInfo.DT,
-            schedule: schedule.DT,
+            patientInfo: patientInfo.DT.user,
+            schedule: schedule,
         };
 
         // Send success response
@@ -322,11 +308,11 @@ const getAllMedicalRecordfromPatient = async (req, res) => {
 };
 module.exports = {
     postAppointment,
-    getAppointment,
     postMedicalRecord,
-    putMedicalRecord,
     putPatientInfo,
     getRelative,
+    getScheduleForPatient,
+    getPatient,
     quickCheckUp,
     getAllMedicalRecordfromPatient,
 };

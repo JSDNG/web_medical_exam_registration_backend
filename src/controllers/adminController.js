@@ -1,26 +1,24 @@
 const {
     registerAccount,
-    loginAccount,
+    loginWithLocal,
     createNewUser,
     getTime,
     getSpecialty,
     getMedicalStaff,
     getMedicalStaffById,
     putMedicalStaffById,
-    deleteMedicalStaffById,
     deleteDoctorSpecialtyById,
     getPosition,
     putSpecialtyById,
     createNewSpecialty,
-    ListOfFamousDoctors,
+    listOfFamousDoctors,
     getAllDoctorfromSpecialtyById,
     createNewMedication,
     putMedicationById,
     getMedication,
-    getAllScheduleByDoctor,
 } = require("../services/adminService");
 const { createDoctorSpecialty } = require("../services/doctorService");
-const { findSchedudeForPatient } = require("../services/patientService");
+require("dotenv").config();
 const register = async (req, res) => {
     try {
         if (!req.body.email || !req.body.password || !req.body.fullName || !req.body.roleId || !req.body.accountType) {
@@ -64,6 +62,7 @@ const register = async (req, res) => {
         });
     }
 };
+
 const login = async (req, res) => {
     try {
         if (!req.body.email || !req.body.password) {
@@ -73,10 +72,17 @@ const login = async (req, res) => {
                 DT: "",
             });
         }
-        let data = await loginAccount(req.body);
+        let data = await loginWithLocal(req.body);
         // set cookie
-        if (data && data.DT && data.DT.access_token) {
-            res.cookie("jwt", data.DT.access_token, { httpOnly: true, maxAge: 60 * 60 * 1000 });
+        if (data && data.DT && data.DT.access_token && data.DT.refresh_token) {
+            res.cookie("access_token", data.DT.access_token, {
+                httpOnly: true,
+                maxAge: +process.env.MAX_AGE_ACCESS_TOKEN,
+            });
+            res.cookie("refresh_token", data.DT.refresh_token, {
+                httpOnly: true,
+                maxAge: +process.env.MAX_AGE_REFRESH_TOKEN,
+            });
         }
 
         return res.status(200).json({
@@ -95,11 +101,13 @@ const login = async (req, res) => {
 };
 const logout = async (req, res) => {
     try {
-        res.clearCookie("jwt");
+        res.clearCookie("access_token");
+        res.clearCookie("refresh_token");
+        res.clearCookie("id");
         return res.status(200).json({
             EC: 0,
-            EM: "Logout succeed",
-            DT: req.body,
+            EM: "Đăng xuất thành công.",
+            DT: "",
         });
     } catch (err) {
         console.log(err);
@@ -119,7 +127,7 @@ const getAllMedicalStaff = async (req, res) => {
                 DT: "",
             });
         }
-        let data = await getMedicalStaff(req.query.medicalstaff);
+        let data = await getMedicalStaff(req.query.medicalstaff, req.query.search);
         return res.status(200).json({
             EC: data.EC,
             EM: data.EM,
@@ -194,7 +202,9 @@ const postSpecialty = async (req, res) => {
 };
 const getAllSpecialty = async (req, res) => {
     try {
-        let data = await getSpecialty();
+        let page = req.query.page;
+        let limit = req.query.limit;
+        let data = await getSpecialty(+page, +limit);
         return res.status(200).json({
             EC: data.EC,
             EM: data.EM,
@@ -236,7 +246,7 @@ const putOneSpecialty = async (req, res) => {
 };
 const getOneMedicalStaff = async (req, res) => {
     try {
-        let data = await getMedicalStaffById(req.params.id);
+        let data = await getMedicalStaffById(req.query.id);
         return res.status(200).json({
             EC: data.EC,
             EM: data.EM,
@@ -279,38 +289,12 @@ const putOneMedicalStaff = async (req, res) => {
         });
     }
 };
-const deleteOneMedicalStaff = async (req, res) => {
-    try {
-        if (!req.params.id) {
-            return res.status(200).json({
-                EC: 1,
-                EM: "missing required params",
-                DT: "",
-            });
-        } else {
-            // let data = await deleteDoctorSpecialtyById(req.params.id);
-            // let data1 = await deleteCardByStudySetId(req.params.id);
-            // if (data1 && data1.EC === 0) {
-            //     let data = await deleteStudySetById(req.params.id);
-            //     return res.status(200).json({
-            //         EC: data.EC,
-            //         EM: data.EM,
-            //         DT: data.DT,
-            //     });
-            // }
-        }
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({
-            EC: -1,
-            EM: "error from server",
-            DT: "",
-        });
-    }
-};
 const getListOfFamousDoctors = async (req, res) => {
     try {
-        let data = await ListOfFamousDoctors();
+        let page = req.query.page;
+        let limit = req.query.limit;
+        let data = await listOfFamousDoctors(+page, +limit);
+
         return res.status(200).json({
             EC: data.EC,
             EM: data.EM,
@@ -409,6 +393,7 @@ const getAllMedication = async (req, res) => {
         });
     }
 };
+
 module.exports = {
     register,
     login,
@@ -421,7 +406,6 @@ module.exports = {
     putOneSpecialty,
     getOneMedicalStaff,
     putOneMedicalStaff,
-    deleteOneMedicalStaff,
     getListOfFamousDoctors,
     getAllDoctorfromSpecialty,
     getAllMedication,

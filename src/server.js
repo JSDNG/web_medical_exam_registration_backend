@@ -7,6 +7,7 @@ const cookieParser = require("cookie-parser");
 const initWebRoutes = require("./routes/web");
 const initAPIRoutes = require("./routes/api");
 const connection = require("./config/connectDB");
+const { configLoginWithGoogle } = require("./middleware/passport");
 const app = express(); // app express
 const port = process.env.PORT;
 const hostname = process.env.HOST_NAME;
@@ -44,7 +45,7 @@ app.use(cookieParser());
 //     .catch((err) => {
 //         console.log("Failed to sync database: " + err.message);
 //     });
-
+configLoginWithGoogle();
 // khai bao route
 initWebRoutes(app);
 initAPIRoutes(app);
@@ -52,6 +53,7 @@ initAPIRoutes(app);
 app.use((req, res) => {
     return res.send("404 not found");
 });
+
 // run server
 app.listen(port, hostname, () => {
     console.log(`BackEnd app listening on port ${port}`);

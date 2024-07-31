@@ -15,7 +15,7 @@ module.exports = {
                     type: Sequelize.INTEGER,
                 },
                 file: {
-                    type: Sequelize.BLOB,
+                    type: Sequelize.BLOB("long"),
                 },
                 doctorId: {
                     type: Sequelize.INTEGER,
