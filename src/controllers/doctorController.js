@@ -76,7 +76,7 @@ const deleteScheduleById = async (req, res) => {
 };
 const getAllAppointmentDoctor = async (req, res) => {
     try {
-        let data = await getAllAppointmentfromOneDoctor(req.query.id);
+        let data = await getAllAppointmentfromOneDoctor(req.query.doctorId, req.query.statusId);
         return res.status(200).json({
             EC: data.EC,
             EM: data.EM,
@@ -150,6 +150,7 @@ const postInvoice = async (req, res) => {
                 DT: "",
             });
         }
+        console.log(">>>",req.body);
         let data = await createInvoice(req.body);
         return res.status(200).json({
             EC: data.EC,

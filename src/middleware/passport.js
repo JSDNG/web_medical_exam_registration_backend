@@ -9,7 +9,7 @@ const configLoginWithGoogle = () => {
             {
                 clientID: process.env.GOOGLE_APP_CLIENT_ID,
                 clientSecret: process.env.GOOGLE_APP_CLIENT_SECRET,
-                callbackURL: "http://localhost:8081/api/v1/auth/google/callback",
+                callbackURL: `http://localhost:${process.env.PORT}/api/v1/auth/google/callback`,
             },
             async (accessToken, refreshToken, profile, done) => {
                 try {
@@ -19,9 +19,7 @@ const configLoginWithGoogle = () => {
                         email: profile.emails && profile.emails.length > 0 ? profile.emails[0].value : "",
                         authGoogleId: profile.id,
                     };
-
                     let user = await loginWithGoogle(authType, rawData);
-                    console.log("check>>>>>>>>>>>", user);
                     return done(null, user);
                 } catch (err) {
                     console.log(err);
@@ -30,20 +28,6 @@ const configLoginWithGoogle = () => {
             }
         )
     );
-
-    // Serialize user into the sessions
-    passport.serializeUser((user, done) => {
-        done(null, user.id);
-    });
-
-    // Deserialize user from the sessions
-    passport.deserializeUser((id, done) => {
-        // Fetch user by ID from the database
-        // Assuming a getUserById function
-        getUserById(id)
-            .then((user) => done(null, user))
-            .catch((err) => done(err));
-    });
 };
 
 module.exports = {

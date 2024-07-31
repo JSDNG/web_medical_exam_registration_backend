@@ -30,16 +30,19 @@ const {
 const {
     postAppointment,
     putPatientInfo,
-    getAppointment,
     getRelative,
     quickCheckUp,
     getAllMedicalRecordfromPatient,
+    getPatient,
+    getScheduleForPatient,
 } = require("../controllers/patientController");
 
 const { putAppointment, getAllAppointment, deleteAppointment } = require("../controllers/staffController");
 const { checkUserJWT, checkUserPermission } = require("../middleware/jwtAction");
 const passport = require("passport");
 const passportConfig = require("../middleware/passport");
+require("dotenv").config();
+
 const router = express.Router();
 
 const initAPIRoutes = (app) => {
@@ -52,15 +55,29 @@ const initAPIRoutes = (app) => {
     router.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
     router.get(
         "/auth/google/callback",
-        passport.authenticate("google", { session: false }, { failureRedirect: "/login" }),
+        passport.authenticate("google", {
+            session: false,
+            failureRedirect: `${process.env.REACT_URL}/login`,
+        }),
         (req, res) => {
-            // Successful authentication, redirect home.
-            console.log("check user", res.user);
-            res.redirect("/");
-        },
+            if (req.user && req.user.DT && req.user.DT.access_token && req.user.DT.refresh_token) {
+                res.cookie("access_token", req.user.DT.access_token, {
+                    httpOnly: true,
+                    maxAge: +process.env.MAX_AGE_ACCESS_TOKEN,
+                });
+                res.cookie("refresh_token", req.user.DT.refresh_token, {
+                    httpOnly: true,
+                    maxAge: +process.env.MAX_AGE_REFRESH_TOKEN,
+                });
+                res.cookie("id", req.user.DT.user.id, {
+                    httpOnly: false,
+                    maxAge: +process.env.MAX_AGE_ACCESS_TOKEN,
+                });
+            }
+            res.redirect(`${process.env.REACT_URL}`);
+        }
     );
 
-    //router.post("/auth/google", passport.authenticate("google-oauth-token", { session: false }), authGoogle);
     // Admin
     router.get("/admin/medical-staff/all", getAllMedicalStaff);
     router.get("/admin/time/all", getAllTime);
@@ -98,10 +115,9 @@ const initAPIRoutes = (app) => {
 
     // Patient
     router.post("/patient/appointment", postAppointment);
-    //router.get("/patient/:id/appointment/all", getAppointment);
-
+    router.get("/patient/find-the-right-schedule", getScheduleForPatient);
     router.get("/patient/medical-record/all", getAllMedicalRecordfromPatient);
-
+    router.get("/patient/information", getPatient);
     router.put("/patient/information", putPatientInfo);
 
     router.post("/patient/quick-check-up", quickCheckUp);

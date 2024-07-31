@@ -13,12 +13,12 @@ const sendEmailAppointment = async (data) => {
             },
         });
         let message = {
-            from: '"Bookingcare 👻" <tranducquynh00000@gmail.com>',
+            from: '"HealthBooking 👻" <tranducquynh00000@gmail.com>',
             to: data.Patient.email,
             subject: "Thông tin đặt lịch khám bệnh",
             html: `
             <h3>Xin chào ${data.Patient.fullName}</h3>
-            <p>Bạn nhận được email này vì đã đặt lịch khám bệnh online trên Bookingcare.</p>
+            <p>Bạn nhận được email này vì đã đặt lịch khám bệnh online trên HealthBooking.</p>
             <p>Thông tin đặt lịch khám bệnh:</p>
             <div><b>Khoa: ${data.MedicalRecord.specialtyMR}</b></div>
             <div><b>Số thứ tự khám: ${data.appointmentNumber}, Thời gian: ${data.time}, ${data.date}</b></div>
@@ -51,12 +51,12 @@ const sendEmailInvoice = async (data) => {
             },
         });
         let message = {
-            from: '"Bookingcare 👻" <tranducquynh00000@gmail.com>',
+            from: '"HealthBooking 👻" <tranducquynh00000@gmail.com>',
             to: data.email,
             subject: "Kết quả khám bệnh",
             html: `
             <h3>Xin chào ${data.patientName}</h3>
-            <p>Bạn nhận được email này vì đã khám bệnh tại Bookingcare.</p>
+            <p>Bạn nhận được email này vì đã khám bệnh tại HealthBooking.</p>
             <p>Thông tin đơn thuốc/hóa đơn được gửi trong file đính kèm.</p>
             <p>Xin chân thành cảm ơn!</p>
             `,
@@ -65,6 +65,13 @@ const sendEmailInvoice = async (data) => {
                     path: data.file,
                 },
             ],
+            // attachments: [
+            //     {
+            //         // binary buffer as an attachment
+            //         filename: "text2.txt",
+            //         content: new Buffer(data.file, "utf-8"),
+            //     },
+            // ],
         };
         const info = await transporter.sendMail(message);
         return info;

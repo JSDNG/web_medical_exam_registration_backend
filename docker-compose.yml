@@ -1,7 +1,8 @@
+version: "3.8"
 services:
     db_mysql:
-        image: mysql:5.7.40
-        restart: unless-stopped
+        image: mysql:8.0
+        restart: always
         ports:
             - "3308:3306"
         environment:
@@ -10,30 +11,28 @@ services:
         volumes:
             - db:/var/lib/mysql
 
-    # backend_nodejs:
-    #     build:
-    #         context: .
-    #         dockerfile: Dockerfile
-    #     depends_on:
-    #         - db_mysql
-    #     image: tdq11111/backend_nodejs
-    #     restart: unless-stopped
-    #     working_dir: /app
-    #     volumes:
-    #         - /BackEnd/node_modules
-    #     ports:
-    #         - 8080:8080
-    #     environment:
-    #         - DB_HOST=db_mysql
-    #         - DB_DATABASE_NAME=huongdichvu
-    #         - DB_USERNAME=root
-    #         - DB_PORT=3306
-    #         - DB_PASSWORD=123456
-    #         - DB_DIALECT=mysql
-    #     healthcheck:
-    #         test: apk add curl --fail -s http://localhost:8080/api/
-    #         interval: 30s
-    #         timeout: 10s
-    #         retries: 5
+    backend_nodejs:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        depends_on:
+            - db_mysql
+        image: tdq11111/backend_nodejs_medical
+        restart: unless-stopped
+        working_dir: /app
+        volumes:
+            - /BackEnd/node_modules
+        ports:
+            - 8080:8080
+        environment:
+            - DB_HOST=db_mysql
+            - DB_DATABASE_NAME=tttn
+            - DB_USERNAME=root
+            - DB_PORT=3306
+            - DB_PASSWORD=123456
+            - DB_DIALECT=mysql
+        expose:
+            - 8080
 volumes:
     db:
+#docker compose -p backend_health-booking up -d

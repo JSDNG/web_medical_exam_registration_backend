@@ -3,6 +3,7 @@ const db = require("../models/index");
 const bcrypt = require("bcryptjs");
 const salt = bcrypt.genSaltSync(10);
 const { Op } = require("sequelize");
+const { v4: uuidv4 } = require("uuid");
 const { createJWT } = require("../middleware/jwtAction");
 const hashPass = (password) => {
     return bcrypt.hashSync(password, salt);
@@ -36,7 +37,7 @@ const registerAccount = async (rawData) => {
         if (isEmail === true) {
             return {
                 EC: 1,
-                EM: "Email already exists",
+                EM: "Email đã tồn tại !",
                 DT: "",
             };
         }
@@ -65,17 +66,17 @@ const loginWithLocal = async (rawData) => {
         let account = await db.Account.findOne({
             where: { email: rawData?.email },
         });
-        if (!account.password) {
+        if (!account) {
             return {
                 EC: 1,
-                EM: "Email or password is incorrect",
+                EM: "Tài khoản không tồn tại !",
                 DT: "",
             };
         }
-        if (!account || !checkPassword(rawData?.password, account?.password)) {
+        if (!account.password || !checkPassword(rawData?.password, account?.password)) {
             return {
                 EC: 1,
-                EM: "Email or password is incorrect",
+                EM: "Email hoặc mật khẩu không đúng !",
                 DT: "",
             };
         }
@@ -111,12 +112,12 @@ const loginWithLocal = async (rawData) => {
         let [role, user] = await Promise.all([rolePromise, userPromise]);
 
         let payload = {
-            id: +user.id,
+            id: +account.id,
             email: account.email,
             role: role.roleName,
         };
-        let token = createJWT(payload);
-
+        const access_token = createJWT(payload, process.env.JWT_ACCESS_TOKEN_EXIRES_IN);
+        const refresh_token = createJWT(payload, process.env.JWT_REFRESH_TOKEN_EXIRES_IN);
         if (role.roleName !== "Bệnh nhân") {
             user = user.get({ plain: true });
         }
@@ -124,10 +125,7 @@ const loginWithLocal = async (rawData) => {
         if (user.image) {
             user.image = Buffer.from(user.image, "binary").toString("base64");
         }
-        // const formattedAmount = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
-        //     user?.price
-        // );
-        // user.price = user?.price ? formattedAmount : null;
+
         user.dateOfBirth = user.dateOfBirth ? user.dateOfBirth.toISOString().split("T")[0] : null;
         if (user.Specialties && user.Specialties.length > 0) {
             user.Specialties.forEach((item) => {
@@ -137,12 +135,20 @@ const loginWithLocal = async (rawData) => {
             });
         }
 
+        await db.Account.update(
+            {
+                refreshToken: refresh_token,
+            },
+            {
+                where: { id: account.id },
+            }
+        );
         return {
             EC: 0,
-            EM: "Login succeed",
+            EM: "Đăng nhập thành công.",
             DT: {
-                access_token: token,
-                refresh_token: "refresh_token",
+                access_token: access_token,
+                refresh_token: refresh_token,
                 email: account.email,
                 user: user,
                 role: role.roleName,
@@ -177,15 +183,15 @@ const loginWithGoogle = async (authType, rawData) => {
                 account = account.get({ plain: true });
 
                 await db.Patient.create({
-                    fullName: profile.displayName,
-                    accountId: account.id,
+                    fullName: rawData.fullName,
+                    accountId: +account.id,
                 });
             }
         }
 
-        const rolePromise = db.Role.findOne({ where: { id: account.roleId }, raw: true, nest: true });
+        const rolePromise = db.Role.findOne({ where: { id: +account.roleId }, raw: true, nest: true });
         const patientPrmise = db.Patient.findOne({
-            where: { accountId: account.id },
+            where: { accountId: +account.id },
             attributes: ["id", "fullName", "dateOfBirth", "gender", "phone", "address"],
             raw: true,
             nest: true,
@@ -194,20 +200,28 @@ const loginWithGoogle = async (authType, rawData) => {
         let [role, patient] = await Promise.all([rolePromise, patientPrmise]);
 
         let payload = {
-            id: +patient.id,
+            id: +account.id,
             email: account.email,
             role: role.roleName,
         };
-        let token = createJWT(payload);
+        const access_token = createJWT(payload, process.env.JWT_ACCESS_TOKEN_EXIRES_IN);
+        const refresh_token = createJWT(payload, process.env.JWT_REFRESH_TOKEN_EXIRES_IN);
 
         patient.dateOfBirth = patient.dateOfBirth ? patient.dateOfBirth.toISOString().split("T")[0] : null;
-
+        await db.Account.update(
+            {
+                refreshToken: refresh_token,
+            },
+            {
+                where: { id: +account.id },
+            }
+        );
         return {
             EC: 0,
-            EM: "Login succeed",
+            EM: "Đăng nhập thành công.",
             DT: {
-                access_token: token,
-                refresh_token: "refresh_token",
+                access_token: access_token,
+                refresh_token: refresh_token,
                 email: account.email,
                 user: patient,
                 role: role.roleName,
@@ -244,7 +258,7 @@ const createNewUser = async (fullName, accountId, accountType, phone) => {
 
         return {
             EC: 0,
-            EM: "User created successfully",
+            EM: "Tạo người dùng thành công.",
             DT: "",
         };
     } catch (err) {
@@ -314,7 +328,7 @@ const createNewSpecialty = async (rawData) => {
         });
         return {
             EC: 0,
-            EM: "Specialty created successfully",
+            EM: "Chuyên khoa được tạo thành công.",
             DT: data,
         };
     } catch (err) {
@@ -327,7 +341,7 @@ const createNewSpecialty = async (rawData) => {
     }
 };
 
-const getSpecialty = async () => {
+const getSpecialty = async (page, limit) => {
     try {
         let results = await db.Specialty.findAll({ attributes: ["id", "specialtyName", "description", "image"] });
         results.forEach((specialty) => {
@@ -336,6 +350,28 @@ const getSpecialty = async () => {
             }
         });
         let data = results && results.length > 0 ? results.map((result) => result.get({ plain: true })) : [];
+        if (!data || data.length === 0) {
+            return {
+                EC: 0,
+                EM: "Specialty not found",
+                DT: [],
+            };
+        }
+        if (page && limit) {
+            let offset = (page - 1) * limit;
+            let totalPages = Math.ceil(data.length / limit);
+
+            let results = {
+                totalRows: data.length,
+                totalPages: totalPages,
+                data: data.slice(offset, offset + limit),
+            };
+            return {
+                EC: 0,
+                EM: "Get the specialty list by page",
+                DT: results,
+            };
+        }
         return {
             EC: 0,
             EM: "Get the specialty list",
@@ -366,7 +402,7 @@ const putSpecialtyById = async (rawData) => {
         );
         return {
             EC: 0,
-            EM: "Specialty updated successfully",
+            EM: "Chuyên khoa đã cập nhật thành công.",
             DT: "",
         };
     } catch (err) {
@@ -401,9 +437,9 @@ const getOneSpecialty = async (id) => {
         };
     }
 };
-const getMedicalStaff = async (rawData) => {
+const getMedicalStaff = async (medicalstaff, search) => {
     try {
-        if (rawData !== "bac-si" && rawData !== "nhan-vien") {
+        if (medicalstaff !== "bac-si" && medicalstaff !== "nhan-vien") {
             return { EC: 0, EM: "Not found Medical Staff", DT: [] };
         }
         const results = await db.MedicalStaff.findAll({
@@ -424,30 +460,23 @@ const getMedicalStaff = async (rawData) => {
                     include: { model: db.Role, attributes: ["id", "roleName"] },
                 },
             ],
-            // raw: true,
-            // nest: true,
-            // group: ["MedicalStaff.id"],
         });
         let data = results && results.length > 0 ? results.map((result) => result.get({ plain: true })) : [];
         if (!data || data.length === 0) {
-            return { EC: 0, EM: "No doctor found", DT: [] };
+            return { EC: 0, EM: "No medical staff found", DT: [] };
         }
 
         const filteredList = data.filter((item) => {
             const roleName = item?.Account?.Role?.roleName;
             if (
-                (rawData === "bac-si" && (roleName === "Nhân viên" || roleName === "Quản trị viên")) ||
-                (rawData === "nhan-vien" && (roleName === "Bác sĩ" || roleName === "Quản trị viên"))
+                (medicalstaff === "bac-si" && (roleName === "Nhân viên" || roleName === "Quản trị viên")) ||
+                (medicalstaff === "nhan-vien" && (roleName === "Bác sĩ" || roleName === "Quản trị viên"))
             ) {
                 return false;
             }
             if (item.image) {
                 item.image = Buffer.from(item.image, "binary").toString("base64");
             }
-            // const formattedAmount = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
-            //     item?.price
-            // );
-            // item.price = item?.price ? formattedAmount : null;
 
             if (item.Specialties) {
                 item.Specialties.forEach((specialty) => {
@@ -458,11 +487,36 @@ const getMedicalStaff = async (rawData) => {
             }
             return true;
         });
+        function removeDiacritics(str) {
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
 
-        return { EC: 0, EM: "Get list medical staff", DT: filteredList };
+        if (search) {
+            const searchString = removeDiacritics(search.toLowerCase());
+        
+            const result = filteredList.filter((item) => {
+                const fullName = removeDiacritics(item.fullName.toLowerCase());
+                return fullName.includes(searchString); 
+            });
+        
+            return {
+                EC: 0,
+                EM: "Get list medical staff",
+                DT: result, 
+            };
+        }
+        return {
+            EC: 0,
+            EM: "Get list medical staff",
+            DT: filteredList,
+        };
     } catch (err) {
         console.error(err);
-        return { EC: -1, EM: "Something went wrong in service...", DT: "" };
+        return {
+            EC: -1,
+            EM: "Something went wrong in service...",
+            DT: "",
+        };
     }
 };
 const getMedicalStaffById = async (id) => {
@@ -488,19 +542,23 @@ const getMedicalStaffById = async (id) => {
                     model: db.Position,
                     attributes: ["id", "positionName"],
                 },
+                {
+                    model: db.Account,
+                    attributes: ["email"],
+                    include: [
+                        {
+                            model: db.Role,
+                            attributes: ["roleName"],
+                        },
+                    ],
+                },
             ],
-            // raw: true,
-            // nest: true,
         });
         user = user.get({ plain: true });
 
         if (user.image) {
             user.image = Buffer.from(user.image, "binary").toString("base64");
         }
-        // const formattedAmount = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
-        //     user?.price
-        // );
-        // user.price = user?.price ? formattedAmount : null;
 
         if (user.Specialties && user.Specialties.length > 0) {
             user.Specialties.forEach((item) => {
@@ -512,7 +570,11 @@ const getMedicalStaffById = async (id) => {
         return {
             EC: 0,
             EM: "get user success",
-            DT: user,
+            DT: {
+                email: user.Account.email,
+                role: user.Account.Role.roleName,
+                user: user,
+            },
         };
     } catch (err) {
         console.log(err);
@@ -550,7 +612,7 @@ const putMedicalStaffById = async (rawData) => {
         );
         return {
             EC: 0,
-            EM: "User updated successfully",
+            EM: "Nhân viên y tế đã cập nhật thành công.",
             DT: data,
         };
     } catch (err) {
@@ -584,7 +646,7 @@ const deleteDoctorSpecialtyById = async (id) => {
         };
     }
 };
-const ListOfFamousDoctors = async () => {
+const listOfFamousDoctors = async (page, limit) => {
     try {
         const results = await db.MedicalStaff.findAll({
             attributes: ["id", "fullName", "image", "gender", "phone", "description", "price"],
@@ -640,7 +702,27 @@ const ListOfFamousDoctors = async () => {
         );
         doctorsWithRecords.sort((a, b) => b.MedicalRecords - a.MedicalRecords);
 
-        return { EC: 0, EM: "Get list of famous doctors", DT: doctorsWithRecords };
+        if (page && limit) {
+            let offset = (page - 1) * limit;
+            let totalPages = Math.ceil(doctorsWithRecords.length / limit);
+
+            let results = {
+                totalRows: doctorsWithRecords.length,
+                totalPages: totalPages,
+                data: doctorsWithRecords.slice(offset, offset + limit),
+            };
+            return {
+                EC: 0,
+                EM: "Get list of famous doctors by page",
+                DT: results,
+            };
+        }
+
+        return {
+            EC: 0,
+            EM: "Get list of famous doctors",
+            DT: doctorsWithRecords,
+        };
     } catch (err) {
         console.error(err);
         return { EC: -1, EM: "Something went wrong in service...", DT: "" };
@@ -708,7 +790,7 @@ const createNewMedication = async (rawData) => {
         });
         return {
             EC: 0,
-            EM: "Medication created successfully",
+            EM: "Thuốc đã được tạo mới thành công.",
             DT: data,
         };
     } catch (err) {
@@ -734,7 +816,7 @@ const putMedicationById = async (rawData) => {
         );
         return {
             EC: 0,
-            EM: "Medication updated successfully",
+            EM: "Thuốc đã được cập nhật thành công.",
             DT: "",
         };
     } catch (err) {
@@ -873,7 +955,7 @@ module.exports = {
     getSpecialty,
     getOneSpecialty,
     getMedicalStaff,
-    ListOfFamousDoctors,
+    listOfFamousDoctors,
     getMedicalStaffById,
     putMedicalStaffById,
     deleteDoctorSpecialtyById,
