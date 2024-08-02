@@ -202,7 +202,6 @@ const quickCheckUp = async (req, res) => {
                 DT: "",
             });
         }
-
         // Create appointment
         const appointmentInfo = await createAppointment({
             statusId: 2,
@@ -254,17 +253,20 @@ const quickCheckUp = async (req, res) => {
         let specialtyInfo = await getOneSpecialty(medicalRecordInfo.DT.specialtyId);
         let patientInfo;
         if (relative) {
-            patientInfo = await getOneRelative(relativeId);
+            let data = await getOneRelative(relativeId);
+            patientInfo = data.DT;
         } else {
-            patientInfo = await getOnePatient(medicalRecordInfo.DT.patientId);
+            let data = await getOnePatient(medicalRecordInfo.DT.patientId);
+            patientInfo = data.DT.user;
         }
+
         // Prepare response
         let result = {
             appointmentInfo: appointmentInfo.DT,
             medicalRecordInfo: medicalRecordInfo.DT,
             doctorInfo: doctorInfo.DT.user,
             specialtyInfo: specialtyInfo.DT,
-            patientInfo: patientInfo.DT.user,
+            patientInfo: patientInfo,
             schedule: schedule,
         };
 

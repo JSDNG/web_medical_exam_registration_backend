@@ -128,15 +128,14 @@ const createNewRelative = async (rawData) => {
             address: rawData.address,
             patientId: rawData.patientId,
         };
-        let id = await checkEmailFromRelative(rawData.email);
-        if (id) {
-            let data = await db.Relative.update(relativeData, {
-                where: { id: id },
+        if (rawData.id) {
+            await db.Relative.update(relativeData, {
+                where: { id: rawData.id },
             });
             return {
                 EC: 0,
                 EM: "Relative updated successfully",
-                DT: data,
+                DT: rawData.id,
             };
         } else {
             let data = await db.Relative.create(relativeData);
@@ -301,14 +300,10 @@ const getOnePatient = async (id) => {
         if (result) {
             result.dateOfBirth = result.dateOfBirth ? result.dateOfBirth.toISOString().split("T")[0] : null;
         }
-        result.email = result.Account.email;
-        result.role = result.Account.Role.roleName;
-        // Xóa thuộc tính Account không cần thiết
-        delete result.Account;
         return {
             EC: 0,
             EM: "Get the patient",
-            DT: { email: result.email, role: result.role, user: result },
+            DT: { email: result?.Account?.email, role: result?.Account?.Role?.roleName, user: result },
         };
     } catch (err) {
         console.log(err);
@@ -327,7 +322,9 @@ const getOneRelative = async (id) => {
             raw: true,
             nest: true,
         });
-        result.dateOfBirth = result.dateOfBirth ? result.dateOfBirth.toISOString().split("T")[0] : null;
+        if (result) {
+            result.dateOfBirth = result.dateOfBirth ? result.dateOfBirth.toISOString().split("T")[0] : null;
+        }
         return {
             EC: 0,
             EM: "Get the relative",

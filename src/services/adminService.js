@@ -491,18 +491,18 @@ const getMedicalStaff = async (medicalstaff, search) => {
             return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         }
 
-        if (search) {
+        if (search !== null && search !== "undefined") {
             const searchString = removeDiacritics(search.toLowerCase());
-        
+
             const result = filteredList.filter((item) => {
                 const fullName = removeDiacritics(item.fullName.toLowerCase());
-                return fullName.includes(searchString); 
+                return fullName.includes(searchString);
             });
-        
+
             return {
                 EC: 0,
-                EM: "Get list medical staff",
-                DT: result, 
+                EM: "Get list medical staff with search",
+                DT: result,
             };
         }
         return {

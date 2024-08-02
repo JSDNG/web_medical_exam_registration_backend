@@ -496,7 +496,7 @@ const createInvoice = async (rawData) => {
         await sendEmailInvoice(rawData);
         return {
             EC: 0,
-            EM: "Invoice created successfully",
+            EM: "Gửi hóa đơn thành công.",
             DT: "data",
         };
     } catch (err) {

@@ -150,7 +150,6 @@ const postInvoice = async (req, res) => {
                 DT: "",
             });
         }
-        console.log(">>>",req.body);
         let data = await createInvoice(req.body);
         return res.status(200).json({
             EC: data.EC,

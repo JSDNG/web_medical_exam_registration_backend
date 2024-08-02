@@ -10,6 +10,8 @@ services:
             - MYSQL_ROOT_PASSWORD=123456
         volumes:
             - db:/var/lib/mysql
+        networks:
+            - health-booking-network
 
     backend_nodejs:
         build:
@@ -21,7 +23,7 @@ services:
         restart: unless-stopped
         working_dir: /app
         volumes:
-            - /BackEnd/node_modules
+            - /backend_nodejs/node_modules
         ports:
             - 8080:8080
         environment:
@@ -33,6 +35,12 @@ services:
             - DB_DIALECT=mysql
         expose:
             - 8080
+        networks:
+            - health-booking-network
 volumes:
     db:
+networks:
+    health-booking-network:
+        external: true
+#docker network create health-booking-network
 #docker compose -p backend_health-booking up -d

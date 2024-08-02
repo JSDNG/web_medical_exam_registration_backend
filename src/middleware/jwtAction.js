@@ -130,6 +130,7 @@ const checkUserPermission = (req, res, next) => {
             { method: "PUT", url: "/medical-staff" },
         ];
         const doctorRole = [
+            { method: "DELETE", url: /^\/staff\/appointment\/\d+$/ },
             { method: "GET", url: "/appointment/all" },
             { method: "GET", url: "/doctor/schedule/all" },
             { method: "GET", url: "/admin/time/all" },

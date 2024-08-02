@@ -230,7 +230,7 @@ const deleteAppointmentById = async (id) => {
         });
         return {
             EC: 0,
-            EM: "Appointments deleted",
+            EM: "Xóa lịch hẹn thàn công.",
             DT: "",
         };
     } catch (err) {
