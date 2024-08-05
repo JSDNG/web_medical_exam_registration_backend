@@ -6,8 +6,8 @@ services:
         ports:
             - "3308:3306"
         environment:
-            - MYSQL_DATABASE=tttn
-            - MYSQL_ROOT_PASSWORD=123456
+            - MYSQL_DATABASE=${DB_NAME}
+            - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
         volumes:
             - db:/var/lib/mysql
         networks:
@@ -28,17 +28,21 @@ services:
             - 8080:8080
         environment:
             - DB_HOST=db_mysql
-            - DB_DATABASE_NAME=tttn
-            - DB_USERNAME=root
+            - DB_DATABASE_NAME=${DB_NAME}
+            - DB_USERNAME=${DB_USER}
             - DB_PORT=3306
-            - DB_PASSWORD=123456
-            - DB_DIALECT=mysql
+            - DB_PASSWORD=${DB_PASSWORD}
+            - DB_DIALECT=${DB_DIALECT}
         expose:
             - 8080
+        env_file:
+            - .env
         networks:
             - health-booking-network
+
 volumes:
     db:
+
 networks:
     health-booking-network:
         external: true

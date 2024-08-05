@@ -138,6 +138,7 @@ const checkUserPermission = (req, res, next) => {
             { method: "DELETE", url: /^\/doctor\/schedule\/\d+$/ },
             { method: "GET", url: "/doctor/appointment-from-one-doctor/all" },
             { method: "PUT", url: "/doctor/examining-doctor" },
+            { method: "POST", url: "/doctor/re-examination" },
             { method: "POST", url: "/doctor/prescription" },
             { method: "POST", url: "/doctor/send-email-invoice" },
             { method: "GET", url: "/doctor/invoice" },

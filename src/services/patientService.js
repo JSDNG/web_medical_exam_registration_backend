@@ -392,14 +392,6 @@ const getAllMedicalRecordfromPatientById = async (rawData) => {
                     model: db.MedicalStaff,
                     attributes: ["id", "fullName", "gender", "phone", "price"],
                 },
-                // {
-                //     model: db.Prescription,
-                //     attributes: ["id", "medicationName", "price", "quantity", "instruction"],
-                // },
-                // {
-                //     model: db.Invoice,
-                //     attributes: ["id", "totalPrice", "dateCreated"],
-                // },
             ],
             raw: true,
             nest: true,

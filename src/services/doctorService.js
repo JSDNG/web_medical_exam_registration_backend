@@ -5,14 +5,22 @@ const { Op } = require("sequelize");
 const Sequelize = require("sequelize");
 const prescription = require("../models/prescription");
 const { sendEmailInvoice } = require("./emailService");
-const checkUserId = async (id) => {
-    let userId = await db.MedicalStaff.findOne({
+const checkMedicalRecord = async (id) => {
+    let record = await db.MedicalRecord.findOne({
         where: { id: id },
     });
-    if (userId) {
-        return true;
+    if (record.relativeId) {
+        return {
+            specialtyId: record.specialtyId,
+            patientId: record.patientId,
+            status: true,
+        };
     }
-    return false;
+    return {
+        specialtyId: record.specialtyId,
+        patientId: record.patientId,
+        status: false,
+    };
 };
 const createSchedule = async (rawData) => {
     try {
@@ -233,9 +241,17 @@ const getAllAppointmentfromOneDoctor = async (doctorId, statusId) => {
             nest: true,
         });
         // Lọc theo id của bác sĩ
-        let result = data.filter(
-            (item) => item.Schedule.MedicalStaff.id === +doctorId && item.AllStatus.id === +statusId
-        );
+        let result;
+        if (+statusId === 2) {
+            result = data.filter(
+                (item) =>
+                    item.Schedule.MedicalStaff.id === +doctorId && (item.AllStatus.id === 2 || item.AllStatus.id === 8)
+            );
+        } else if (+statusId === 3) {
+            result = data.filter(
+                (item) => item.Schedule.MedicalStaff.id === +doctorId && item.AllStatus.id === +statusId
+            );
+        }
 
         // Kiểm tra nếu data không có giá trị thì trả về mảng rỗng
         if (!data || data.length === 0 || result.length === 0) {
@@ -576,4 +592,5 @@ module.exports = {
     createInvoice,
     getAllInvoiceByDoctorId,
     putMedicalRecordById,
+    checkMedicalRecord,
 };
